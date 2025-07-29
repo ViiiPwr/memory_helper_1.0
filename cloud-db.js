@@ -18,28 +18,56 @@ class CloudDatabase {
         // 检查官方推荐的 cloudbase SDK 是否加载
         if (typeof cloudbase !== 'undefined') {
             console.log('检测到官方 cloudbase SDK');
-            if (!this.db) {
-                console.log('数据库实例不可用');
-                return false;
-            }
+
+            // 检查配置
             if (!CLOUD_CONFIG || !CLOUD_CONFIG.envId || CLOUD_CONFIG.envId === 'your-env-id-here') {
                 console.log('环境ID未正确配置');
                 return false;
             }
-            return true;
+
+            // 尝试初始化应用
+            try {
+                const app = cloudbase.init({
+                    env: CLOUD_CONFIG.envId
+                });
+                if (app) {
+                    console.log('云开发应用初始化成功');
+                    return true;
+                } else {
+                    console.log('云开发应用初始化失败');
+                    return false;
+                }
+            } catch (error) {
+                console.log('云开发应用初始化出错:', error.message);
+                return false;
+            }
         }
         // 检查 tcb SDK 是否加载
         else if (typeof tcb !== 'undefined') {
             console.log('检测到 tcb SDK');
-            if (!this.db) {
-                console.log('数据库实例不可用');
-                return false;
-            }
+
+            // 检查配置
             if (!CLOUD_CONFIG || !CLOUD_CONFIG.envId || CLOUD_CONFIG.envId === 'your-env-id-here') {
                 console.log('环境ID未正确配置');
                 return false;
             }
-            return true;
+
+            // 尝试初始化应用
+            try {
+                const app = tcb.init({
+                    env: CLOUD_CONFIG.envId
+                });
+                if (app) {
+                    console.log('云开发应用初始化成功');
+                    return true;
+                } else {
+                    console.log('云开发应用初始化失败');
+                    return false;
+                }
+            } catch (error) {
+                console.log('云开发应用初始化出错:', error.message);
+                return false;
+            }
         } else {
             console.log('云开发SDK未加载');
             return false;
@@ -247,26 +275,47 @@ class CloudDatabase {
 
     // 从本地存储迁移数据到云数据库
     async migrateFromLocalStorage(userId) {
+        console.log('开始数据迁移...', { userId });
+
+        // 首先检查云开发是否可用
+        if (!this.isAvailable()) {
+            console.log('❌ 云开发不可用，无法迁移数据');
+            return;
+        }
+
         try {
+            console.log('✅ 云开发可用，开始迁移数据...');
+
             // 迁移卡组数据
             const localHistory = localStorage.getItem(`history_${userId}`);
             if (localHistory) {
                 const cardSets = JSON.parse(localHistory);
+                console.log(`迁移卡组数据，数量: ${cardSets.length}`);
                 await this.saveCardSets(userId, cardSets);
-                console.log('卡组数据迁移完成');
+                console.log('✅ 卡组数据迁移完成');
+            } else {
+                console.log('没有本地卡组数据需要迁移');
             }
 
             // 迁移历史标签
             const localTags = localStorage.getItem(`cardSetHistoryTags_${userId}`);
             if (localTags) {
                 const tags = JSON.parse(localTags);
+                console.log(`迁移历史标签，数量: ${tags.length}`);
                 await this.saveHistoryTags(userId, tags);
-                console.log('历史标签迁移完成');
+                console.log('✅ 历史标签迁移完成');
+            } else {
+                console.log('没有本地标签数据需要迁移');
             }
 
-            console.log('数据迁移完成');
+            console.log('✅ 数据迁移完成');
         } catch (error) {
-            console.error('数据迁移失败:', error);
+            console.error('❌ 数据迁移失败:', error);
+            console.error('错误详情:', {
+                message: error.message,
+                stack: error.stack,
+                userId
+            });
         }
     }
 }
