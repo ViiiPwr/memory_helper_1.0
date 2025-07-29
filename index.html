@@ -96,30 +96,34 @@
 
     // 测试网络连接
     console.log('=== 网络连接测试 ===');
-    try {
-      const response = await fetch('https://cloud1-3gk2wadje2fe35be.ap-shanghai.tcb-api.tencentcloudapi.com/');
-      console.log('✅ 腾讯云 API 可访问');
-    } catch (error) {
-      console.log('❌ 腾讯云 API 不可访问:', error.message);
-    }
+    (async function () {
+      try {
+        const response = await fetch('https://cloud1-3gk2wadje2fe35be.ap-shanghai.tcb-api.tencentcloudapi.com/');
+        console.log('✅ 腾讯云 API 可访问');
+      } catch (error) {
+        console.log('❌ 腾讯云 API 不可访问:', error.message);
+      }
+    })();
 
     // 在云托管环境中，可以直接使用云开发数据库
     // 不需要额外的认证，因为已经在云托管环境中
     if (typeof cloudbase !== 'undefined') {
       // 优先使用新的 SDK
-      try {
-        const app = cloudbase.init({
-          env: CLOUD_CONFIG.envId
-        });
-        console.log('云开发已初始化 (@cloudbase/js-sdk)');
+      (async function () {
+        try {
+          const app = cloudbase.init({
+            env: CLOUD_CONFIG.envId
+          });
+          console.log('云开发已初始化 (@cloudbase/js-sdk)');
 
-        // 测试认证
-        const auth = app.auth();
-        const loginResult = await auth.signInAnonymously();
-        console.log('✅ 匿名登录测试成功');
-      } catch (error) {
-        console.error('❌ 云开发初始化失败:', error);
-      }
+          // 测试认证
+          const auth = app.auth();
+          const loginResult = await auth.signInAnonymously();
+          console.log('✅ 匿名登录测试成功');
+        } catch (error) {
+          console.error('❌ 云开发初始化失败:', error);
+        }
+      })();
     } else if (typeof tcb !== 'undefined') {
       // 降级使用 tcb SDK
       const app = tcb.init({
@@ -1310,6 +1314,12 @@
     function renderHistory(filteredHistory = null) {
       const historyList = document.getElementById("historyList");
       historyList.innerHTML = "";
+
+      // 确保 history 是数组
+      if (!Array.isArray(history)) {
+        history = [];
+      }
+
       const displayHistory = filteredHistory || history;
 
       if (displayHistory.length === 0) {
@@ -1965,6 +1975,12 @@
     function renderHistoryTags() {
       const container = document.getElementById("historyTagsContainer");
       container.innerHTML = "";
+
+      // 确保 currentTags 是数组
+      if (!Array.isArray(currentTags)) {
+        currentTags = [];
+      }
+
       // 只显示未选中的历史标签，最新在前，最多2行16个
       const displayTags = historyTags.filter(tag => !currentTags.includes(tag)).slice(0, 16);
       displayTags.forEach(tag => {
