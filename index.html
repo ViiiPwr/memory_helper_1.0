@@ -394,6 +394,78 @@
 </head>
 
 <body>
+  <!-- 授权验证界面 -->
+  <div id="authOverlay" style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  ">
+    <div style="
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    ">
+      <h2 style="color: #2c3e50; margin-bottom: 20px;">欢迎使用配对题生成器</h2>
+      <p style="color: #666; margin-bottom: 20px;">请输入授权码以继续使用</p>
+      <input type="text" id="authCodeInput" placeholder="请输入授权码" style="
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 16px;
+        margin-bottom: 20px;
+        box-sizing: border-box;
+      ">
+      <button id="authSubmitBtn" style="
+        background: #3498db;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        width: 100%;
+      ">验证授权码</button>
+    </div>
+  </div>
+
+  <!-- 用户信息栏 -->
+  <div id="userInfoBar" style="
+    display: none;
+    background: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  ">
+    <div>
+      <span style="color: #2c3e50; font-weight: 500;">用户ID: </span>
+      <span id="currentUserId" style="color: #3498db;"></span>
+    </div>
+    <button id="logoutBtn" style="
+      background: #95a5a6;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    ">退出登录</button>
+  </div>
+
   <h1>配对题练习</h1>
 
   <!-- 添加卡组区域 -->
@@ -502,10 +574,114 @@
   </div>
 
   <script>
+    // 用户数据管理
+    let currentUser = null;
     let allFactors = [];
     let correctAnswers = {};
     let history = [];
     let reviewModeCallback = null; // 用于popup回调
+
+    // 初始化用户系统
+    function initUserSystem() {
+      // 检查是否已登录
+      const savedUser = localStorage.getItem('currentUser');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        showMainInterface();
+        loadUserData();
+      } else {
+        showAuthInterface();
+      }
+    }
+
+    // 显示授权界面
+    function showAuthInterface() {
+      document.getElementById('authOverlay').style.display = 'flex';
+      document.getElementById('userInfoBar').style.display = 'none';
+      document.querySelector('h1').style.display = 'none';
+      document.querySelector('.section').style.display = 'none';
+    }
+
+    // 显示主界面
+    function showMainInterface() {
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('userInfoBar').style.display = 'flex';
+      document.querySelector('h1').style.display = 'block';
+      document.querySelector('.section').style.display = 'block';
+      document.getElementById('currentUserId').textContent = currentUser.userId;
+    }
+
+    // 验证授权码（Mock版本）
+    function validateAuthCode(code) {
+      // Mock验证：任何非空输入都成功
+      if (code && code.trim()) {
+        const userId = 'USER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        currentUser = {
+          userId: userId,
+          authCode: code,
+          loginTime: new Date().toISOString()
+        };
+
+        // 保存用户信息
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+        // 显示主界面
+        showMainInterface();
+
+        // 初始化用户数据
+        initUserData();
+
+        showToast('授权成功！欢迎使用配对题生成器', 'success');
+        return true;
+      }
+      return false;
+    }
+
+    // 初始化用户数据
+    function initUserData() {
+      // 清空现有数据
+      allFactors = [];
+      correctAnswers = {};
+      history = [];
+
+      // 加载用户数据
+      loadUserData();
+    }
+
+    // 加载用户数据
+    function loadUserData() {
+      const userHistory = localStorage.getItem(`history_${currentUser.userId}`);
+      if (userHistory) {
+        history = JSON.parse(userHistory);
+        renderHistory();
+      }
+    }
+
+    // 保存用户数据
+    function saveUserData() {
+      if (currentUser) {
+        localStorage.setItem(`history_${currentUser.userId}`, JSON.stringify(history));
+      }
+    }
+
+    // 退出登录
+    function logout() {
+      showConfirm('确定要退出登录吗？当前数据已保存。', () => {
+        // 清除用户信息
+        localStorage.removeItem('currentUser');
+        currentUser = null;
+
+        // 清空界面数据
+        allFactors = [];
+        correctAnswers = {};
+        history = [];
+
+        // 显示授权界面
+        showAuthInterface();
+
+        showToast('已退出登录', 'info');
+      });
+    }
 
     // 洗牌函数
     function shuffleArray(arr) {
@@ -1046,7 +1222,9 @@
       });
 
     function saveHistory() {
-      localStorage.setItem("cardGroupHistory", JSON.stringify(history));
+      if (currentUser) {
+        localStorage.setItem(`history_${currentUser.userId}`, JSON.stringify(history));
+      }
     }
 
     function backupHistory() {
@@ -1521,12 +1699,33 @@
       };
     }
 
-    // 加载历史卡组时自动恢复
-    const saved = localStorage.getItem("cardGroupHistory");
-    if (saved) {
-      history = JSON.parse(saved);
-      renderHistory();
-    }
+    // 授权验证事件监听器
+    document.getElementById('authSubmitBtn').addEventListener('click', function () {
+      const authCode = document.getElementById('authCodeInput').value.trim();
+      if (!authCode) {
+        showToast('请输入授权码', 'error');
+        return;
+      }
+
+      if (validateAuthCode(authCode)) {
+        document.getElementById('authCodeInput').value = '';
+      } else {
+        showToast('授权码验证失败', 'error');
+      }
+    });
+
+    // 授权码输入框回车事件
+    document.getElementById('authCodeInput').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        document.getElementById('authSubmitBtn').click();
+      }
+    });
+
+    // 退出登录按钮事件
+    document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    // 初始化用户系统
+    initUserSystem();
     // 启动时加载历史标签池
     loadHistoryTags();
     renderHistoryTags();
