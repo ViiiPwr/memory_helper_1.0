@@ -14,9 +14,9 @@ const CLOUD_CONFIG = {
 
 // 初始化云开发
 function initCloud() {
-    // 优先使用 @cloudbase/js-sdk
+    // 优先使用官方推荐的 cloudbase SDK
     if (typeof cloudbase !== 'undefined') {
-        console.log('使用 @cloudbase/js-sdk');
+        console.log('使用官方 cloudbase SDK');
         const app = cloudbase.init({
             env: CLOUD_CONFIG.envId
         });
@@ -53,7 +53,16 @@ function getModels() {
     return null;
 }
 
+// 获取认证实例（如果支持）
+function getAuth() {
+    const app = initCloud();
+    if (app && app.auth) {
+        return app.auth();
+    }
+    return null;
+}
+
 // 导出配置
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { CLOUD_CONFIG, initCloud, getDatabase, getModels };
+    module.exports = { CLOUD_CONFIG, initCloud, getDatabase, getModels, getAuth };
 } 

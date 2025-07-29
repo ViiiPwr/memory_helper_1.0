@@ -1,15 +1,23 @@
 // 云数据库操作函数
 class CloudDatabase {
     constructor() {
-        this.db = getDatabase();
         this.collections = CLOUD_CONFIG.collections;
+        this._db = null; // 延迟初始化
+    }
+
+    // 获取数据库实例（延迟初始化）
+    get db() {
+        if (!this._db) {
+            this._db = getDatabase();
+        }
+        return this._db;
     }
 
     // 检查云开发是否可用
     isAvailable() {
-        // 检查新的 @cloudbase/js-sdk 是否加载
+        // 检查官方推荐的 cloudbase SDK 是否加载
         if (typeof cloudbase !== 'undefined') {
-            console.log('检测到 @cloudbase/js-sdk');
+            console.log('检测到官方 cloudbase SDK');
             if (!this.db) {
                 console.log('数据库实例不可用');
                 return false;
@@ -93,11 +101,22 @@ class CloudDatabase {
 
     // 保存卡组数据
     async saveCardSets(userId, cardSets) {
+        console.log('开始保存卡组数据到云端...', { userId, cardSetsCount: cardSets.length });
+
         try {
+            // 检查数据库连接
+            if (!this.db) {
+                throw new Error('数据库实例不可用');
+            }
+
+            console.log('数据库连接正常，开始删除旧数据...');
+
             // 删除该用户的所有卡组
             await this.db.collection(this.collections.cardSets)
                 .where({ userId })
                 .remove();
+
+            console.log('旧数据删除完成，开始添加新数据...');
 
             // 批量添加卡组
             if (cardSets.length > 0) {
@@ -111,12 +130,19 @@ class CloudDatabase {
                     updatedAt: new Date().toISOString()
                 }));
 
+                console.log('准备添加卡组数据:', cardSetData);
                 await this.db.collection(this.collections.cardSets).add(cardSetData);
             }
 
             console.log('✅ 卡组数据已保存到云数据库');
         } catch (error) {
             console.error('❌ 保存卡组数据到云数据库失败:', error);
+            console.error('错误详情:', {
+                message: error.message,
+                stack: error.stack,
+                userId,
+                cardSetsCount: cardSets.length
+            });
             // 降级到本地存储
             localStorage.setItem(`history_${userId}`, JSON.stringify(cardSets));
             console.log('✅ 卡组数据已保存到本地存储');
@@ -126,7 +152,16 @@ class CloudDatabase {
 
     // 获取卡组数据
     async getCardSets(userId) {
+        console.log('开始从云端获取卡组数据...', { userId });
+
         try {
+            // 检查数据库连接
+            if (!this.db) {
+                throw new Error('数据库实例不可用');
+            }
+
+            console.log('数据库连接正常，开始查询数据...');
+
             const result = await this.db.collection(this.collections.cardSets)
                 .where({ userId })
                 .orderBy('createdAt', 'desc')
@@ -141,10 +176,15 @@ class CloudDatabase {
                 updatedAt: item.updatedAt
             }));
 
-            console.log('卡组数据已从云数据库加载');
+            console.log('✅ 卡组数据已从云数据库加载', { count: cardSets.length });
             return cardSets;
         } catch (error) {
-            console.error('从云数据库获取卡组数据失败:', error);
+            console.error('❌ 从云数据库获取卡组数据失败:', error);
+            console.error('错误详情:', {
+                message: error.message,
+                stack: error.stack,
+                userId
+            });
             throw error; // 抛出异常，让调用方处理降级
         }
     }

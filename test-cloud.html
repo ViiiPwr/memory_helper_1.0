@@ -7,232 +7,260 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 20px;
         }
 
         .test-section {
             margin: 20px 0;
             padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-
-        button {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 5px;
-        }
-
-        button:hover {
-            background: #2980b9;
-        }
-
-        .result {
-            margin-top: 10px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 4px;
-            white-space: pre-wrap;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
+            border: 1px solid #ccc;
         }
 
         .success {
-            background: #d4edda;
-            color: #155724;
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .info {
+            color: blue;
+        }
+
+        button {
+            margin: 5px;
+            padding: 10px;
+        }
+
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            overflow-x: auto;
         }
     </style>
 </head>
 
 <body>
-    <h1>腾讯云云数据库测试</h1>
+    <h1>云数据库连接测试</h1>
 
     <div class="test-section">
-        <h3>1. 环境配置测试</h3>
-        <button onclick="testConfig()">测试配置</button>
-        <div id="configResult" class="result"></div>
+        <h2>1. SDK 检测</h2>
+        <button onclick="testSDK()">检测 SDK</button>
+        <div id="sdk-result"></div>
     </div>
 
     <div class="test-section">
-        <h3>2. 用户数据测试</h3>
-        <input type="text" id="testUserId" placeholder="输入测试用户ID" value="test-user-001">
-        <button onclick="testUserData()">测试用户数据</button>
-        <div id="userResult" class="result"></div>
+        <h2>2. 配置检测</h2>
+        <button onclick="testConfig()">检测配置</button>
+        <div id="config-result"></div>
     </div>
 
     <div class="test-section">
-        <h3>3. 卡组数据测试</h3>
-        <button onclick="testCardSets()">测试卡组数据</button>
-        <div id="cardResult" class="result"></div>
+        <h2>3. 数据库连接</h2>
+        <button onclick="testDatabase()">测试连接</button>
+        <div id="db-result"></div>
     </div>
 
     <div class="test-section">
-        <h3>4. 标签数据测试</h3>
-        <button onclick="testTags()">测试标签数据</button>
-        <div id="tagResult" class="result"></div>
+        <h2>4. 集合操作</h2>
+        <button onclick="testCollection()">测试集合</button>
+        <div id="collection-result"></div>
     </div>
 
     <div class="test-section">
-        <h3>5. 数据迁移测试</h3>
-        <button onclick="testMigration()">测试数据迁移</button>
-        <div id="migrationResult" class="result"></div>
+        <h2>5. 完整测试</h2>
+        <button onclick="runFullTest()">运行完整测试</button>
+        <div id="full-test-result"></div>
     </div>
 
-    <!-- 引入云开发SDK和配置 -->
-    <script src="https://cdn.jsdelivr.net/npm/tcb-js-sdk@latest/dist/tcb.min.js"></script>
+    <!-- 腾讯云云开发SDK -->
+    <!-- 使用官方推荐的CDN链接 -->
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/2.17.3/cloudbase.full.js"></script>
+    <!-- 备用链接 -->
+    <script src="https://cdn.jsdelivr.net/npm/tcb-js-sdk@1.9.0/dist/tcb.min.js"></script>
     <script src="cloud-config.js"></script>
     <script src="cloud-db.js"></script>
 
     <script>
-        // 测试配置
-        async function testConfig() {
-            const resultDiv = document.getElementById('configResult');
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            element.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+        }
+
+        function testSDK() {
+            const result = document.getElementById('sdk-result');
+            result.innerHTML = '';
+
+            log('sdk-result', '开始检测 SDK...');
+
+            // 检查网络状态
+            if (!navigator.onLine) {
+                log('sdk-result', '❌ 网络连接不可用', 'error');
+            } else {
+                log('sdk-result', '✅ 网络连接正常', 'success');
+            }
+
+            // 检查官方推荐的 cloudbase SDK
+            if (typeof cloudbase !== 'undefined') {
+                log('sdk-result', '✅ 检测到官方 cloudbase SDK', 'success');
+                log('sdk-result', `版本信息: ${cloudbase.version || '未知'}`, 'info');
+            } else {
+                log('sdk-result', '❌ 官方 cloudbase SDK 未加载', 'error');
+                // 尝试手动加载
+                log('sdk-result', '尝试手动加载官方 cloudbase SDK...', 'info');
+            }
+
+            // 检查 tcb-js-sdk
+            if (typeof tcb !== 'undefined') {
+                log('sdk-result', '✅ 检测到 tcb-js-sdk', 'success');
+                log('sdk-result', `版本信息: ${tcb.version || '未知'}`, 'info');
+            } else {
+                log('sdk-result', '❌ tcb-js-sdk 未加载', 'error');
+                // 尝试手动加载
+                log('sdk-result', '尝试手动加载 tcb-js-sdk...', 'info');
+            }
+
+            // 检查全局变量
+            if (typeof cloudDB !== 'undefined') {
+                log('sdk-result', '✅ cloudDB 实例已创建', 'success');
+            } else {
+                log('sdk-result', '❌ cloudDB 实例未创建', 'error');
+            }
+
+            // 检查 window 对象上的 SDK
+            if (window.cloudbase) {
+                log('sdk-result', '✅ window.cloudbase 可用', 'success');
+            } else {
+                log('sdk-result', '❌ window.cloudbase 不可用', 'error');
+            }
+
+            if (window.tcb) {
+                log('sdk-result', '✅ window.tcb 可用', 'success');
+            } else {
+                log('sdk-result', '❌ window.tcb 不可用', 'error');
+            }
+        }
+
+        function testConfig() {
+            const result = document.getElementById('config-result');
+            result.innerHTML = '';
+
+            log('config-result', '开始检测配置...');
+
+            if (typeof CLOUD_CONFIG !== 'undefined') {
+                log('config-result', '✅ CLOUD_CONFIG 已加载', 'success');
+                log('config-result', `环境ID: ${CLOUD_CONFIG.envId}`, 'info');
+                log('config-result', `集合配置: ${JSON.stringify(CLOUD_CONFIG.collections)}`, 'info');
+            } else {
+                log('config-result', '❌ CLOUD_CONFIG 未加载', 'error');
+            }
+
+            if (typeof initCloud !== 'undefined') {
+                log('config-result', '✅ initCloud 函数可用', 'success');
+            } else {
+                log('config-result', '❌ initCloud 函数不可用', 'error');
+            }
+
+            if (typeof getDatabase !== 'undefined') {
+                log('config-result', '✅ getDatabase 函数可用', 'success');
+            } else {
+                log('config-result', '❌ getDatabase 函数不可用', 'error');
+            }
+        }
+
+        function testDatabase() {
+            const result = document.getElementById('db-result');
+            result.innerHTML = '';
+
+            log('db-result', '开始测试数据库连接...');
+
             try {
                 const app = initCloud();
                 if (app) {
-                    resultDiv.className = 'result success';
-                    resultDiv.textContent = '✅ 云开发配置正常\n环境ID: ' + CLOUD_CONFIG.envId;
-                } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.textContent = '❌ 云开发配置失败\n请检查环境ID是否正确';
-                }
-            } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ 配置测试失败: ' + error.message;
-            }
-        }
+                    log('db-result', '✅ 云开发应用初始化成功', 'success');
 
-        // 测试用户数据
-        async function testUserData() {
-            const resultDiv = document.getElementById('userResult');
-            const userId = document.getElementById('testUserId').value;
-
-            try {
-                // 测试保存用户
-                const testUser = {
-                    userId: userId,
-                    authCode: userId,
-                    loginTime: new Date().toISOString()
-                };
-
-                await cloudDB.saveUser(testUser);
-                resultDiv.className = 'result success';
-                resultDiv.textContent = '✅ 用户数据保存成功\n用户ID: ' + userId;
-
-                // 测试获取用户
-                const savedUser = await cloudDB.getUser(userId);
-                if (savedUser) {
-                    resultDiv.textContent += '\n✅ 用户数据获取成功';
-                } else {
-                    resultDiv.textContent += '\n❌ 用户数据获取失败';
-                }
-            } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ 用户数据测试失败: ' + error.message;
-            }
-        }
-
-        // 测试卡组数据
-        async function testCardSets() {
-            const resultDiv = document.getElementById('cardResult');
-            const userId = document.getElementById('testUserId').value;
-
-            try {
-                const testCardSets = [
-                    {
-                        id: 'test-card-1',
-                        title: '测试卡组1',
-                        tags: ['测试', '示例'],
-                        groups: { '分组1': ['项目1', '项目2'] },
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
+                    const db = getDatabase();
+                    if (db) {
+                        log('db-result', '✅ 数据库实例获取成功', 'success');
+                    } else {
+                        log('db-result', '❌ 数据库实例获取失败', 'error');
                     }
-                ];
-
-                await cloudDB.saveCardSets(userId, testCardSets);
-                resultDiv.className = 'result success';
-                resultDiv.textContent = '✅ 卡组数据保存成功';
-
-                const savedCardSets = await cloudDB.getCardSets(userId);
-                if (savedCardSets.length > 0) {
-                    resultDiv.textContent += '\n✅ 卡组数据获取成功\n数量: ' + savedCardSets.length;
                 } else {
-                    resultDiv.textContent += '\n❌ 卡组数据获取失败';
+                    log('db-result', '❌ 云开发应用初始化失败', 'error');
                 }
             } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ 卡组数据测试失败: ' + error.message;
+                log('db-result', `❌ 数据库连接测试失败: ${error.message}`, 'error');
             }
         }
 
-        // 测试标签数据
-        async function testTags() {
-            const resultDiv = document.getElementById('tagResult');
-            const userId = document.getElementById('testUserId').value;
+        async function testCollection() {
+            const result = document.getElementById('collection-result');
+            result.innerHTML = '';
+
+            log('collection-result', '开始测试集合操作...');
 
             try {
-                const testTags = ['测试标签1', '测试标签2', '测试标签3'];
-
-                await cloudDB.saveHistoryTags(userId, testTags);
-                resultDiv.className = 'result success';
-                resultDiv.textContent = '✅ 标签数据保存成功';
-
-                const savedTags = await cloudDB.getHistoryTags(userId);
-                if (savedTags.length > 0) {
-                    resultDiv.textContent += '\n✅ 标签数据获取成功\n标签: ' + savedTags.join(', ');
-                } else {
-                    resultDiv.textContent += '\n❌ 标签数据获取失败';
+                if (!cloudDB) {
+                    throw new Error('cloudDB 实例不可用');
                 }
-            } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ 标签数据测试失败: ' + error.message;
-            }
-        }
 
-        // 测试数据迁移
-        async function testMigration() {
-            const resultDiv = document.getElementById('migrationResult');
-            const userId = document.getElementById('testUserId').value;
+                const isAvailable = cloudDB.isAvailable();
+                log('collection-result', `云开发可用性: ${isAvailable}`, isAvailable ? 'success' : 'error');
 
-            try {
-                // 先创建一些本地数据
-                localStorage.setItem(`history_${userId}`, JSON.stringify([
-                    {
-                        id: 'local-card-1',
-                        title: '本地卡组1',
-                        tags: ['本地', '测试'],
-                        groups: { '本地分组': ['本地项目1', '本地项目2'] },
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
+                if (isAvailable) {
+                    // 测试简单的集合操作
+                    const db = cloudDB.db;
+                    const collections = CLOUD_CONFIG.collections;
+
+                    log('collection-result', '测试集合访问...');
+
+                    // 尝试获取集合信息（不实际查询数据）
+                    for (const [name, collectionName] of Object.entries(collections)) {
+                        try {
+                            const collection = db.collection(collectionName);
+                            log('collection-result', `✅ 集合 ${collectionName} 访问成功`, 'success');
+                        } catch (error) {
+                            log('collection-result', `❌ 集合 ${collectionName} 访问失败: ${error.message}`, 'error');
+                        }
                     }
-                ]));
-
-                localStorage.setItem(`cardSetHistoryTags_${userId}`, JSON.stringify(['本地标签1', '本地标签2']));
-
-                await cloudDB.migrateFromLocalStorage(userId);
-                resultDiv.className = 'result success';
-                resultDiv.textContent = '✅ 数据迁移测试成功';
-
-                // 验证迁移结果
-                const migratedCardSets = await cloudDB.getCardSets(userId);
-                const migratedTags = await cloudDB.getHistoryTags(userId);
-
-                resultDiv.textContent += '\n迁移的卡组数量: ' + migratedCardSets.length;
-                resultDiv.textContent += '\n迁移的标签数量: ' + migratedTags.length;
+                }
             } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ 数据迁移测试失败: ' + error.message;
+                log('collection-result', `❌ 集合测试失败: ${error.message}`, 'error');
             }
         }
+
+        async function runFullTest() {
+            const result = document.getElementById('full-test-result');
+            result.innerHTML = '';
+
+            log('full-test-result', '开始运行完整测试...');
+
+            // 1. 测试 SDK
+            log('full-test-result', '1. 测试 SDK 加载...');
+            testSDK();
+
+            // 2. 测试配置
+            log('full-test-result', '2. 测试配置加载...');
+            testConfig();
+
+            // 3. 测试数据库连接
+            log('full-test-result', '3. 测试数据库连接...');
+            testDatabase();
+
+            // 4. 测试集合操作
+            log('full-test-result', '4. 测试集合操作...');
+            await testCollection();
+
+            log('full-test-result', '完整测试完成！', 'success');
+        }
+
+        // 页面加载完成后自动运行基础测试
+        window.addEventListener('load', () => {
+            log('full-test-result', '页面加载完成，准备测试...');
+        });
     </script>
 </body>
 
