@@ -27,12 +27,22 @@ class CloudDatabase {
                 return false;
             }
 
-            // 尝试初始化应用
+            // 尝试初始化应用并检查认证
             try {
                 const app = await initCloud();
                 if (app) {
                     console.log('云开发应用初始化成功');
-                    return true;
+
+                    // 检查认证状态
+                    const auth = app.auth();
+                    const loginState = auth.getLoginState();
+                    if (loginState) {
+                        console.log('✅ 认证状态正常');
+                        return true;
+                    } else {
+                        console.log('❌ 认证状态异常');
+                        return false;
+                    }
                 } else {
                     console.log('云开发应用初始化失败');
                     return false;

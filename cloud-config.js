@@ -24,13 +24,22 @@ async function initCloud() {
         // 进行匿名登录
         try {
             const auth = app.auth();
-            await auth.signInAnonymously();
-            console.log('✅ 匿名登录成功');
+            const loginResult = await auth.signInAnonymously();
+            console.log('✅ 匿名登录成功', loginResult);
+
+            // 验证登录状态
+            const loginState = auth.getLoginState();
+            if (loginState) {
+                console.log('✅ 登录状态验证成功');
+                return app;
+            } else {
+                console.error('❌ 登录状态验证失败');
+                return null;
+            }
         } catch (error) {
             console.error('❌ 匿名登录失败:', error);
+            return null;
         }
-
-        return app;
     }
     // 降级使用 tcb SDK
     else if (typeof tcb !== 'undefined') {
@@ -61,6 +70,31 @@ async function getModels() {
         return app.models;
     }
     return null;
+}
+
+// 检查认证状态
+async function checkAuthStatus() {
+    try {
+        const app = await initCloud();
+        if (!app) {
+            console.log('❌ 云开发应用初始化失败');
+            return false;
+        }
+
+        const auth = app.auth();
+        const loginState = auth.getLoginState();
+
+        if (loginState) {
+            console.log('✅ 认证状态正常', loginState);
+            return true;
+        } else {
+            console.log('❌ 未认证状态');
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ 认证状态检查失败:', error);
+        return false;
+    }
 }
 
 // 获取认证实例（如果支持）

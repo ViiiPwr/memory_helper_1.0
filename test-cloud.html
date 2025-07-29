@@ -207,12 +207,28 @@
                     throw new Error('cloudDB 实例不可用');
                 }
 
-                const isAvailable = cloudDB.isAvailable();
+                const isAvailable = await cloudDB.isAvailable();
                 log('collection-result', `云开发可用性: ${isAvailable}`, isAvailable ? 'success' : 'error');
 
                 if (isAvailable) {
+                    // 测试认证状态
+                    try {
+                        const app = await initCloud();
+                        if (app) {
+                            const auth = app.auth();
+                            const loginState = auth.getLoginState();
+                            if (loginState) {
+                                log('collection-result', '✅ 认证状态正常', 'success');
+                            } else {
+                                log('collection-result', '❌ 认证状态异常', 'error');
+                            }
+                        }
+                    } catch (error) {
+                        log('collection-result', `❌ 认证检查失败: ${error.message}`, 'error');
+                    }
+
                     // 测试简单的集合操作
-                    const db = cloudDB.db;
+                    const db = await cloudDB.getDatabase();
                     const collections = CLOUD_CONFIG.collections;
 
                     log('collection-result', '测试集合访问...');
