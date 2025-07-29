@@ -370,6 +370,71 @@
       border-color: #e74c3c !important;
     }
 
+    .main-title-bg {
+      background: linear-gradient(90deg, #e3f0fc 0%, #d2f6e9 100%);
+      border-radius: 18px;
+      box-shadow: 0 2px 12px rgba(52, 152, 219, 0.08);
+      padding: 28px 0 18px 0;
+      margin: 0 auto 32px auto;
+      max-width: 700px;
+      text-align: center;
+    }
+
+    .main-title-bg h1 {
+      margin: 0;
+      font-size: 2.2rem;
+      color: #2176ae;
+      letter-spacing: 2px;
+      font-weight: 700;
+      text-shadow: 0 2px 8px rgba(52, 152, 219, 0.08);
+    }
+
+    .text-btn {
+      background: none;
+      border: none;
+      color: #3498db;
+      font-size: 15px;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .text-btn:hover {
+      background: #e3f0fc;
+    }
+
+    .help-tooltip {
+      position: absolute;
+      top: 56px;
+      right: 32px;
+      z-index: 2000;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 24px #0002;
+      padding: 0;
+      min-width: 260px;
+      max-width: 320px;
+      border: 1px solid #e3f0fc;
+      animation: fadeIn 0.2s;
+    }
+
+    .help-tooltip-content {
+      padding: 18px 20px 12px 20px;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     @media (max-width: 600px) {
       .columns {
         flex-direction: column;
@@ -455,18 +520,38 @@
       <span style="color: #2c3e50; font-weight: 500;">用户ID: </span>
       <span id="currentUserId" style="color: #3498db;"></span>
     </div>
-    <button id="logoutBtn" style="
-      background: #95a5a6;
-      color: white;
-      padding: 6px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    ">退出登录</button>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <button id="helpBtn" class="text-btn" type="button">使用教程</button>
+      <button id="logoutBtn" style="
+        background: #95a5a6;
+        color: white;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      ">退出登录</button>
+    </div>
+    <div id="helpTooltip" class="help-tooltip" style="display:none;">
+      <div class="help-tooltip-content">
+        <div style="font-weight:bold; margin-bottom:6px;">使用教程</div>
+        <div style="text-align:left; font-size:14px; line-height:1.7;">
+          1. 输入授权码登录，数据自动隔离。<br>
+          2. 创建新卡组，填写题目名称、标签、分组和条目。<br>
+          3. 生成配对题后可在历史卡组中查找、编辑、删除。<br>
+          4. 点击历史卡组可进入复习模式，支持多次检查答案。<br>
+          5. 标签可多选，支持常用标签快捷选择。<br>
+          6. 退出登录后，数据不会丢失。<br>
+          7. 如有问题，欢迎反馈！
+        </div>
+        <button id="closeHelpTooltip" class="text-btn" style="margin-top:10px;">关闭</button>
+      </div>
+    </div>
   </div>
 
-  <h1>配对题练习</h1>
+  <div class="main-title-bg">
+    <h1>学成选择题——配对卡片练习</h1>
+  </div>
 
   <!-- 添加卡组区域 -->
   <div class="section">
@@ -1738,6 +1823,27 @@
 
     // 退出登录按钮事件
     document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    // 帮助按钮和tooltip逻辑
+    document.addEventListener('DOMContentLoaded', function () {
+      const helpBtn = document.getElementById('helpBtn');
+      const helpTooltip = document.getElementById('helpTooltip');
+      const closeHelpTooltip = document.getElementById('closeHelpTooltip');
+      if (helpBtn && helpTooltip && closeHelpTooltip) {
+        helpBtn.addEventListener('click', function (e) {
+          helpTooltip.style.display = 'block';
+        });
+        closeHelpTooltip.addEventListener('click', function () {
+          helpTooltip.style.display = 'none';
+        });
+        // 点击tooltip外部关闭
+        document.addEventListener('mousedown', function (event) {
+          if (helpTooltip.style.display === 'block' && !helpTooltip.contains(event.target) && event.target !== helpBtn) {
+            helpTooltip.style.display = 'none';
+          }
+        });
+      }
+    });
 
     // 初始化用户系统
     initUserSystem();
