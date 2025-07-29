@@ -13,13 +13,23 @@ const CLOUD_CONFIG = {
 };
 
 // 初始化云开发
-function initCloud() {
+async function initCloud() {
     // 优先使用官方推荐的 cloudbase SDK
     if (typeof cloudbase !== 'undefined') {
         console.log('使用官方 cloudbase SDK');
         const app = cloudbase.init({
             env: CLOUD_CONFIG.envId
         });
+
+        // 进行匿名登录
+        try {
+            const auth = app.auth();
+            await auth.signInAnonymously();
+            console.log('✅ 匿名登录成功');
+        } catch (error) {
+            console.error('❌ 匿名登录失败:', error);
+        }
+
         return app;
     }
     // 降级使用 tcb SDK
@@ -36,8 +46,8 @@ function initCloud() {
 }
 
 // 获取数据库实例
-function getDatabase() {
-    const app = initCloud();
+async function getDatabase() {
+    const app = await initCloud();
     if (app) {
         return app.database();
     }
@@ -45,8 +55,8 @@ function getDatabase() {
 }
 
 // 获取数据模型实例（如果支持）
-function getModels() {
-    const app = initCloud();
+async function getModels() {
+    const app = await initCloud();
     if (app && app.models) {
         return app.models;
     }
@@ -54,8 +64,8 @@ function getModels() {
 }
 
 // 获取认证实例（如果支持）
-function getAuth() {
-    const app = initCloud();
+async function getAuth() {
+    const app = await initCloud();
     if (app && app.auth) {
         return app.auth();
     }

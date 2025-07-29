@@ -3,18 +3,20 @@ class CloudDatabase {
     constructor() {
         this.collections = CLOUD_CONFIG.collections;
         this._db = null; // 延迟初始化
+        this._initialized = false; // 初始化状态
     }
 
     // 获取数据库实例（延迟初始化）
-    get db() {
-        if (!this._db) {
-            this._db = getDatabase();
+    async getDatabase() {
+        if (!this._db && !this._initialized) {
+            this._initialized = true;
+            this._db = await getDatabase();
         }
         return this._db;
     }
 
     // 检查云开发是否可用
-    isAvailable() {
+    async isAvailable() {
         // 检查官方推荐的 cloudbase SDK 是否加载
         if (typeof cloudbase !== 'undefined') {
             console.log('检测到官方 cloudbase SDK');
@@ -27,9 +29,7 @@ class CloudDatabase {
 
             // 尝试初始化应用
             try {
-                const app = cloudbase.init({
-                    env: CLOUD_CONFIG.envId
-                });
+                const app = await initCloud();
                 if (app) {
                     console.log('云开发应用初始化成功');
                     return true;
@@ -85,40 +85,51 @@ class CloudDatabase {
                 updatedAt: new Date().toISOString()
             };
 
+            const db = await this.getDatabase();
+            if (!db) {
+                throw new Error('数据库实例不可用');
+            }
+
             // 检查用户是否已存在
-            const existingUser = await this.db.collection(this.collections.users)
+            const existingUser = await db.collection(this.collections.users)
                 .where({ userId })
                 .get();
 
             if (existingUser.data.length > 0) {
                 // 更新现有用户
-                await this.db.collection(this.collections.users)
+                await db.collection(this.collections.users)
                     .where({ userId })
                     .update(user);
             } else {
                 // 创建新用户
                 user.createdAt = new Date().toISOString();
-                await this.db.collection(this.collections.users).add(user);
+                await db.collection(this.collections.users).add(user);
             }
 
-            console.log('用户数据已保存到云数据库');
+            console.log('✅ 用户数据已保存到云数据库');
         } catch (error) {
-            console.error('保存用户数据失败:', error);
+            console.error('❌ 保存用户数据失败:', error);
             // 降级到本地存储
             localStorage.setItem('currentUser', JSON.stringify(userData));
+            throw error;
         }
     }
 
     // 获取用户信息
     async getUser(userId) {
         try {
-            const result = await this.db.collection(this.collections.users)
+            const db = await this.getDatabase();
+            if (!db) {
+                throw new Error('数据库实例不可用');
+            }
+
+            const result = await db.collection(this.collections.users)
                 .where({ userId })
                 .get();
 
             return result.data.length > 0 ? result.data[0] : null;
         } catch (error) {
-            console.error('获取用户数据失败:', error);
+            console.error('❌ 获取用户数据失败:', error);
             // 降级到本地存储
             const savedUser = localStorage.getItem('currentUser');
             return savedUser ? JSON.parse(savedUser) : null;
@@ -133,14 +144,15 @@ class CloudDatabase {
 
         try {
             // 检查数据库连接
-            if (!this.db) {
+            const db = await this.getDatabase();
+            if (!db) {
                 throw new Error('数据库实例不可用');
             }
 
             console.log('数据库连接正常，开始删除旧数据...');
 
             // 删除该用户的所有卡组
-            await this.db.collection(this.collections.cardSets)
+            await db.collection(this.collections.cardSets)
                 .where({ userId })
                 .remove();
 
@@ -159,7 +171,7 @@ class CloudDatabase {
                 }));
 
                 console.log('准备添加卡组数据:', cardSetData);
-                await this.db.collection(this.collections.cardSets).add(cardSetData);
+                await db.collection(this.collections.cardSets).add(cardSetData);
             }
 
             console.log('✅ 卡组数据已保存到云数据库');
@@ -184,13 +196,14 @@ class CloudDatabase {
 
         try {
             // 检查数据库连接
-            if (!this.db) {
+            const db = await this.getDatabase();
+            if (!db) {
                 throw new Error('数据库实例不可用');
             }
 
             console.log('数据库连接正常，开始查询数据...');
 
-            const result = await this.db.collection(this.collections.cardSets)
+            const result = await db.collection(this.collections.cardSets)
                 .where({ userId })
                 .orderBy('createdAt', 'desc')
                 .get();
@@ -222,14 +235,19 @@ class CloudDatabase {
     // 保存历史标签
     async saveHistoryTags(userId, tags) {
         try {
+            const db = await this.getDatabase();
+            if (!db) {
+                throw new Error('数据库实例不可用');
+            }
+
             // 检查是否已存在该用户的标签记录
-            const existingTags = await this.db.collection(this.collections.historyTags)
+            const existingTags = await db.collection(this.collections.historyTags)
                 .where({ userId })
                 .get();
 
             if (existingTags.data.length > 0) {
                 // 更新现有记录
-                await this.db.collection(this.collections.historyTags)
+                await db.collection(this.collections.historyTags)
                     .where({ userId })
                     .update({
                         tags,
@@ -237,7 +255,7 @@ class CloudDatabase {
                     });
             } else {
                 // 创建新记录
-                await this.db.collection(this.collections.historyTags).add({
+                await db.collection(this.collections.historyTags).add({
                     userId,
                     tags,
                     createdAt: new Date().toISOString(),
@@ -258,15 +276,20 @@ class CloudDatabase {
     // 获取历史标签
     async getHistoryTags(userId) {
         try {
-            const result = await this.db.collection(this.collections.historyTags)
+            const db = await this.getDatabase();
+            if (!db) {
+                throw new Error('数据库实例不可用');
+            }
+
+            const result = await db.collection(this.collections.historyTags)
                 .where({ userId })
                 .get();
 
             const tags = result.data.length > 0 ? result.data[0].tags : [];
-            console.log('历史标签已从云数据库加载');
+            console.log('✅ 历史标签已从云数据库加载');
             return tags;
         } catch (error) {
-            console.error('从云数据库获取历史标签失败:', error);
+            console.error('❌ 从云数据库获取历史标签失败:', error);
             throw error; // 抛出异常，让调用方处理降级
         }
     }
@@ -278,7 +301,8 @@ class CloudDatabase {
         console.log('开始数据迁移...', { userId });
 
         // 首先检查云开发是否可用
-        if (!this.isAvailable()) {
+        const isAvailable = await this.isAvailable();
+        if (!isAvailable) {
             console.log('❌ 云开发不可用，无法迁移数据');
             return;
         }
