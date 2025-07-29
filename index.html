@@ -12,6 +12,53 @@
 
   <!-- 云托管环境下的云开发初始化 -->
   <script>
+    // 全局变量声明
+    let allFactors = [];
+    let correctAnswers = {};
+    let history = [];
+    let currentTags = [];
+    let historyTags = [];
+    let currentUser = null;
+    let reviewModeCallback = null;
+
+    // 内联云开发配置（如果外部配置未加载）
+    if (typeof CLOUD_CONFIG === 'undefined') {
+      window.CLOUD_CONFIG = {
+        envId: 'your-env-id-here', // 请替换为实际环境ID
+        collections: {
+          users: 'users',
+          cardSets: 'cardSets',
+          historyTags: 'historyTags'
+        }
+      };
+      console.warn('使用内联云开发配置，请确保环境ID正确');
+    }
+
+    // 内联云开发初始化函数
+    if (typeof initCloud === 'undefined') {
+      window.initCloud = function () {
+        if (typeof tcb !== 'undefined') {
+          const app = tcb.init({
+            env: CLOUD_CONFIG.envId
+          });
+          return app;
+        } else {
+          console.warn('腾讯云云开发SDK未加载');
+          return null;
+        }
+      };
+    }
+
+    if (typeof getDatabase === 'undefined') {
+      window.getDatabase = function () {
+        const app = initCloud();
+        if (app) {
+          return app.database();
+        }
+        return null;
+      };
+    }
+
     // 在云托管环境中，可以直接使用云开发数据库
     // 不需要额外的认证，因为已经在云托管环境中
     if (typeof tcb !== 'undefined') {
@@ -20,6 +67,122 @@
         env: CLOUD_CONFIG.envId
       });
       console.log('云开发已初始化');
+    }
+
+    // 云数据库降级机制
+    if (typeof cloudDB === 'undefined') {
+      console.warn('cloud-db.js 未加载，使用本地存储模式');
+      // 创建模拟的cloudDB对象
+      window.cloudDB = {
+        isAvailable: () => false,
+        saveUser: async (userData) => {
+          localStorage.setItem('currentUser', JSON.stringify(userData));
+          console.log('用户数据已保存到本地存储');
+        },
+        getUser: async (userId) => {
+          const savedUser = localStorage.getItem('currentUser');
+          return savedUser ? JSON.parse(savedUser) : null;
+        },
+        saveCardSets: async (userId, cardSets) => {
+          localStorage.setItem(`history_${userId}`, JSON.stringify(cardSets));
+          console.log('卡组数据已保存到本地存储');
+        },
+        getCardSets: async (userId) => {
+          const userHistory = localStorage.getItem(`history_${userId}`);
+          return userHistory ? JSON.parse(userHistory) : [];
+        },
+        saveHistoryTags: async (userId, tags) => {
+          localStorage.setItem(`cardSetHistoryTags_${userId}`, JSON.stringify(tags));
+          console.log('历史标签已保存到本地存储');
+        },
+        getHistoryTags: async (userId) => {
+          const saved = localStorage.getItem(`cardSetHistoryTags_${userId}`);
+          return saved ? JSON.parse(saved) : [];
+        },
+        migrateFromLocalStorage: async (userId) => {
+          console.log('本地存储模式，无需迁移');
+        }
+      };
+    }
+
+    // 内联CloudDatabase类（如果外部类未加载）
+    if (typeof CloudDatabase === 'undefined') {
+      window.CloudDatabase = class CloudDatabase {
+        constructor() {
+          this.db = getDatabase();
+          this.collections = CLOUD_CONFIG.collections;
+        }
+
+        isAvailable() {
+          return this.db !== null;
+        }
+
+        async saveUser(userData) {
+          if (!this.isAvailable()) {
+            localStorage.setItem('currentUser', JSON.stringify(userData));
+            return;
+          }
+          // 云数据库逻辑...
+          localStorage.setItem('currentUser', JSON.stringify(userData));
+        }
+
+        async getUser(userId) {
+          if (!this.isAvailable()) {
+            const savedUser = localStorage.getItem('currentUser');
+            return savedUser ? JSON.parse(savedUser) : null;
+          }
+          // 云数据库逻辑...
+          const savedUser = localStorage.getItem('currentUser');
+          return savedUser ? JSON.parse(savedUser) : null;
+        }
+
+        async saveCardSets(userId, cardSets) {
+          if (!this.isAvailable()) {
+            localStorage.setItem(`history_${userId}`, JSON.stringify(cardSets));
+            return;
+          }
+          // 云数据库逻辑...
+          localStorage.setItem(`history_${userId}`, JSON.stringify(cardSets));
+        }
+
+        async getCardSets(userId) {
+          if (!this.isAvailable()) {
+            const userHistory = localStorage.getItem(`history_${userId}`);
+            return userHistory ? JSON.parse(userHistory) : [];
+          }
+          // 云数据库逻辑...
+          const userHistory = localStorage.getItem(`history_${userId}`);
+          return userHistory ? JSON.parse(userHistory) : [];
+        }
+
+        async saveHistoryTags(userId, tags) {
+          if (!this.isAvailable()) {
+            localStorage.setItem(`cardSetHistoryTags_${userId}`, JSON.stringify(tags));
+            return;
+          }
+          // 云数据库逻辑...
+          localStorage.setItem(`cardSetHistoryTags_${userId}`, JSON.stringify(tags));
+        }
+
+        async getHistoryTags(userId) {
+          if (!this.isAvailable()) {
+            const saved = localStorage.getItem(`cardSetHistoryTags_${userId}`);
+            return saved ? JSON.parse(saved) : [];
+          }
+          // 云数据库逻辑...
+          const saved = localStorage.getItem(`cardSetHistoryTags_${userId}`);
+          return saved ? JSON.parse(saved) : [];
+        }
+
+        async migrateFromLocalStorage(userId) {
+          console.log('本地存储模式，无需迁移');
+        }
+      };
+
+      // 创建全局实例
+      if (typeof cloudDB === 'undefined') {
+        window.cloudDB = new CloudDatabase();
+      }
     }
   </script>
   <style>
@@ -678,12 +841,6 @@
 
   <script>
     // 用户数据管理
-    let currentUser = null;
-    let allFactors = [];
-    let correctAnswers = {};
-    let history = [];
-    let reviewModeCallback = null; // 用于popup回调
-
     // 初始化用户系统
     async function initUserSystem() {
       // 检查是否已登录
@@ -1582,9 +1739,6 @@
     }
 
     // 标签管理
-    let currentTags = [];
-    let historyTags = [];
-
     // 加载历史标签池
     async function loadHistoryTags() {
       if (!currentUser) return;

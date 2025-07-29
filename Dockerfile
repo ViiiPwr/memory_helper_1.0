@@ -3,6 +3,9 @@ FROM nginx:alpine
 
 # 复制静态文件到nginx默认目录
 COPY index.html /usr/share/nginx/html/
+COPY cloud-config.js /usr/share/nginx/html/
+COPY cloud-db.js /usr/share/nginx/html/
+COPY test-cloud.html /usr/share/nginx/html/
 
 # 复制自定义nginx配置
 COPY nginx.conf /etc/nginx/nginx.conf
