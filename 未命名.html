@@ -1,559 +1,641 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>配对卡片练习</title>
     <style>
-        body {
-            font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans', Arial, sans-serif;
-            padding: 2vw;
-            background: #f4f6fb;
-            color: #222;
-            margin: 0;
-        }
+      body {
+        font-family: "Segoe UI", "PingFang SC", "Hiragino Sans", Arial,
+          sans-serif;
+        padding: 2vw;
+        background: #f4f6fb;
+        color: #222;
+        margin: 0;
+      }
 
-        h1,
-        h2 {
-            color: #2a4d7a;
-        }
+      h1,
+      h2 {
+        color: #2a4d7a;
+      }
 
-        h1 {
-            text-align: center;
-        }
+      h1 {
+        text-align: center;
+      }
 
-        input,
-        textarea,
-        button {
-            font-size: 1rem;
-            border-radius: 6px;
-            border: 1px solid #bbb;
-            padding: 8px;
-            margin-bottom: 8px;
-            box-sizing: border-box;
-        }
+      input,
+      textarea,
+      button {
+        font-size: 1rem;
+        border-radius: 6px;
+        border: 1px solid #bbb;
+        padding: 8px;
+        margin-bottom: 8px;
+        box-sizing: border-box;
+      }
 
-        input:focus,
-        textarea:focus {
-            outline: 2px solid #4CAF50;
-        }
+      input:focus,
+      textarea:focus {
+        outline: 2px solid #4caf50;
+      }
 
-        button {
-            background: #4CAF50;
-            color: #fff;
-            border: none;
-            margin-right: 10px;
-            transition: background 0.2s;
-        }
+      button {
+        background: #4caf50;
+        color: #fff;
+        border: none;
+        margin-right: 10px;
+        transition: background 0.2s;
+      }
 
-        button:hover {
-            background: #388e3c;
-        }
+      button:hover {
+        background: #388e3c;
+      }
 
-        .group-input {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px #0001;
-            padding: 16px;
-            margin-bottom: 16px;
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-        }
+      .group-input {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px #0001;
+        padding: 16px;
+        margin-bottom: 16px;
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
 
-        .grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+      .grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
 
-        .item {
-            border: 1px solid #ccc;
-            padding: 10px 16px;
-            background: #e3f2fd;
-            cursor: grab;
-            user-select: none;
-            border-radius: 6px;
-            min-width: 80px;
-            text-align: center;
-            font-weight: 500;
-            box-shadow: 0 1px 4px #0001;
-        }
+      .item {
+        border: 1px solid #ccc;
+        padding: 10px 16px;
+        background: #e3f2fd;
+        cursor: grab;
+        user-select: none;
+        border-radius: 6px;
+        min-width: 80px;
+        text-align: center;
+        font-weight: 500;
+        box-shadow: 0 1px 4px #0001;
+      }
 
-        .dropzone,
-        .dropzone-col {
-            border: 2px dashed #90caf9;
-            min-height: 50px;
-            padding: 10px;
-            background: #fff;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            min-width: 120px;
-            transition: background 0.2s;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            flex: 1 1 0;
-        }
+      .dropzone,
+      .dropzone-col {
+        border: 2px dashed #90caf9;
+        min-height: 50px;
+        padding: 10px;
+        background: #fff;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        min-width: 120px;
+        transition: background 0.2s;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1 1 0;
+      }
 
-        .dropzone-col {
-            border: none !important;
-            background: none !important;
-            min-height: 0 !important;
-            padding: 0 !important;
-            margin-bottom: 0 !important;
-        }
+      .dropzone-col {
+        border: none !important;
+        background: none !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        margin-bottom: 0 !important;
+      }
 
-        .dropzone.over {
-            background: #e0ffe0;
-        }
+      .dropzone.over {
+        background: #e0ffe0;
+      }
 
-        .dropzone-wrapper {
-            width: 100%;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+      .dropzone-wrapper {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
 
+      .columns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .question {
+        flex: 1 1 220px;
+        min-width: 220px;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px #0001;
+        padding: 12px;
+        margin-bottom: 10px;
+      }
+
+      .result {
+        margin-top: 5px;
+        font-weight: bold;
+        color: #388e3c;
+      }
+
+      #history {
+        margin-top: 30px;
+      }
+
+      .history-item {
+        margin-bottom: 10px;
+        cursor: pointer;
+        color: #1976d2;
+        text-decoration: underline;
+        font-size: 1.1em;
+      }
+
+      @media (max-width: 600px) {
         .columns {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
+          flex-direction: column;
+          gap: 10px;
         }
 
         .question {
-            flex: 1 1 220px;
-            min-width: 220px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 1px 4px #0001;
-            padding: 12px;
-            margin-bottom: 10px;
+          min-width: unset;
         }
 
-        .result {
-            margin-top: 5px;
-            font-weight: bold;
-            color: #388e3c;
+        .grid {
+          flex-direction: column;
+          gap: 6px;
         }
 
-        #history {
-            margin-top: 30px;
+        .dropzone-wrapper {
+          flex-direction: column !important;
+          gap: 4px !important;
         }
-
-        .history-item {
-            margin-bottom: 10px;
-            cursor: pointer;
-            color: #1976d2;
-            text-decoration: underline;
-            font-size: 1.1em;
-        }
-
-        @media (max-width: 600px) {
-            .columns {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .question {
-                min-width: unset;
-            }
-
-            .grid {
-                flex-direction: column;
-                gap: 6px;
-            }
-
-            .dropzone-wrapper {
-                flex-direction: column !important;
-                gap: 4px !important;
-            }
-        }
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <h1>配对题练习</h1>
-    <div style="margin-bottom: 10px; display: flex; justify-content: center;">
-        <label style="margin-right: 8px;">题目名称：</label>
-        <input type="text" id="cardSetTitle" required placeholder="请输入本卡组的题目名称" style="width: 60%; padding: 6px;" />
-        <span id="titleRequiredTip" style="color: #e53935; margin-left: 8px; display: none;">*必填</span>
+    <div style="margin-bottom: 10px; display: flex; justify-content: center">
+      <label style="margin-right: 8px">题目名称：</label>
+      <input
+        type="text"
+        id="cardSetTitle"
+        required
+        placeholder="请输入本卡组的题目名称"
+        style="width: 60%; padding: 6px"
+      />
+      <span
+        id="titleRequiredTip"
+        style="color: #e53935; margin-left: 8px; display: none"
+        >*必填</span
+      >
     </div>
     <div id="groupContainer">
-        <div class="group-input">
-            <div style="flex:1;">
-                <input type="text" placeholder="分组名称 (如：促进胃酸分泌的因素)" class="group-name"
-                    style="width:100%;margin-bottom:6px;" />
-                <textarea placeholder="条目列表 (用逗号或换行分隔)" class="group-items" style="width:100%;height:60px;"></textarea>
-            </div>
-            <button class="remove-group" style="background:#e57373;">删除</button>
+      <div class="group-input">
+        <div style="flex: 1">
+          <input
+            type="text"
+            placeholder="分组名称 (如：促进胃酸分泌的因素)"
+            class="group-name"
+            style="width: 100%; margin-bottom: 6px"
+          />
+          <textarea
+            placeholder="条目列表 (用逗号或换行分隔)"
+            class="group-items"
+            style="width: 100%; height: 60px"
+          ></textarea>
         </div>
+        <button class="remove-group" style="background: #e57373">删除</button>
+      </div>
     </div>
-    <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 10px;">
-        <button id="addGroup">添加新分组</button>
-        <button id="generate">生成配对题</button>
+    <div
+      style="
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        margin-bottom: 10px;
+      "
+    >
+      <button id="addGroup">添加新分组</button>
+      <button id="generate">生成配对题</button>
     </div>
 
     <!-- Popup for review mode selection -->
-    <div id="reviewModePopup"
-        style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:1000;background:rgba(0,0,0,0.25);align-items:center;justify-content:center;">
-        <div
-            style="background:#fff;padding:32px 24px;border-radius:12px;box-shadow:0 4px 24px #0002;min-width:240px;text-align:center;">
-            <div style="font-size:1.1em;margin-bottom:18px;">请选择复习模式</div>
-            <button id="reviewAllBtn" style="margin-bottom:10px;width:80%;">全部打乱复习</button><br>
-            <button id="reviewWrongBtn" style="background:#ff9800;width:80%;">只复习错题</button><br>
-            <button id="cancelReviewBtn" style="margin-top:10px;background:#bbb;width:80%;">取消</button>
-        </div>
+    <div
+      id="reviewModePopup"
+      style="
+        display: none;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.25);
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: #fff;
+          padding: 32px 24px;
+          border-radius: 12px;
+          box-shadow: 0 4px 24px #0002;
+          min-width: 240px;
+          text-align: center;
+        "
+      >
+        <div style="font-size: 1.1em; margin-bottom: 18px">请选择复习模式</div>
+        <button id="reviewAllBtn" style="margin-bottom: 10px; width: 80%">
+          全部打乱复习</button
+        ><br />
+        <button id="reviewWrongBtn" style="background: #ff9800; width: 80%">
+          只复习错题</button
+        ><br />
+        <button
+          id="cancelReviewBtn"
+          style="margin-top: 10px; background: #bbb; width: 80%"
+        >
+          取消
+        </button>
+      </div>
     </div>
 
     <div id="matchingArea"></div>
-    <div style="display: flex; justify-content: center; margin-top: 10px;">
-        <button id="checkAnswers" style="display:none;">检查答案</button>
+    <div style="display: flex; justify-content: center; margin-top: 10px">
+      <button id="checkAnswers" style="display: none">检查答案</button>
     </div>
 
     <div id="history">
-        <h2>历史卡组</h2>
-        <div id="historyList"></div>
+      <h2>历史卡组</h2>
+      <div id="historyList"></div>
     </div>
 
     <script>
-        let allFactors = [];
-        let correctAnswers = {};
-        let history = [];
-        let reviewModeCallback = null; // 用于popup回调
+      let allFactors = [];
+      let correctAnswers = {};
+      let history = [];
+      let reviewModeCallback = null; // 用于popup回调
 
-        // 优化分组输入区的添加和删除
-        document.getElementById('addGroup').addEventListener('click', function () {
-            const container = document.getElementById('groupContainer');
-            const groupDiv = document.createElement('div');
-            groupDiv.className = 'group-input';
-            groupDiv.style.display = 'flex';
-            groupDiv.style.gap = '10px';
-            groupDiv.style.alignItems = 'flex-start';
-            groupDiv.innerHTML = `
+      // 优化分组输入区的添加和删除
+      document
+        .getElementById("addGroup")
+        .addEventListener("click", function () {
+          const container = document.getElementById("groupContainer");
+          const groupDiv = document.createElement("div");
+          groupDiv.className = "group-input";
+          groupDiv.style.display = "flex";
+          groupDiv.style.gap = "10px";
+          groupDiv.style.alignItems = "flex-start";
+          groupDiv.innerHTML = `
                 <div style="flex:1;">
                     <input type="text" placeholder="分组名称" class="group-name" style="width:100%;margin-bottom:6px;" />
                     <textarea placeholder="条目列表 (用逗号或换行分隔)" class="group-items" style="width:100%;height:60px;"></textarea>
                 </div>
                 <button class="remove-group" style="background:#e57373;">删除</button>
             `;
-            groupDiv.querySelector('.remove-group').onclick = function () {
-                groupDiv.remove();
-            };
-            container.appendChild(groupDiv);
+          groupDiv.querySelector(".remove-group").onclick = function () {
+            groupDiv.remove();
+          };
+          container.appendChild(groupDiv);
         });
-        // 默认分组的删除按钮
-        document.querySelector('.remove-group').onclick = function () {
-            this.parentElement.remove();
-        };
+      // 默认分组的删除按钮
+      document.querySelector(".remove-group").onclick = function () {
+        this.parentElement.remove();
+      };
 
-        document.getElementById('generate').addEventListener('click', function () {
-            const titleInput = document.getElementById('cardSetTitle');
-            const titleTip = document.getElementById('titleRequiredTip');
-            if (!titleInput.value.trim()) {
-                titleTip.style.display = 'inline';
-                titleInput.focus();
-                return;
-            } else {
-                titleTip.style.display = 'none';
-            }
+      document
+        .getElementById("generate")
+        .addEventListener("click", function () {
+          const titleInput = document.getElementById("cardSetTitle");
+          const titleTip = document.getElementById("titleRequiredTip");
+          if (!titleInput.value.trim()) {
+            titleTip.style.display = "inline";
+            titleInput.focus();
+            return;
+          } else {
+            titleTip.style.display = "none";
+          }
 
-            const groupNames = document.querySelectorAll('.group-name');
-            const groupItems = document.querySelectorAll('.group-items');
-            allFactors = [];
-            correctAnswers = {};
+          const groupNames = document.querySelectorAll(".group-name");
+          const groupItems = document.querySelectorAll(".group-items");
+          allFactors = [];
+          correctAnswers = {};
 
-            groupNames.forEach((nameInput, index) => {
-                const groupName = nameInput.value.trim();
-                if (!groupName) return;
-                const items = groupItems[index].value.split(/[\n,]+/).map(s => s.trim()).filter(s => s);
-                items.forEach(item => {
-                    allFactors.push({ text: item, group: groupName, correct: false });
-                });
-                correctAnswers[groupName] = items;
+          groupNames.forEach((nameInput, index) => {
+            const groupName = nameInput.value.trim();
+            if (!groupName) return;
+            const items = groupItems[index].value
+              .split(/[\n,]+/)
+              .map((s) => s.trim())
+              .filter((s) => s);
+            items.forEach((item) => {
+              allFactors.push({ text: item, group: groupName, correct: false });
             });
+            correctAnswers[groupName] = items;
+          });
 
-            const cardSetTitle = titleInput.value.trim() || `卡组${history.length + 1}`;
-            history.push({
-                title: cardSetTitle,
-                factors: JSON.parse(JSON.stringify(allFactors)),
-                correctAnswers: JSON.parse(JSON.stringify(correctAnswers))
-            });
-            saveHistory();
-            renderHistory();
-            renderMatchingArea(allFactors, correctAnswers);
+          const cardSetTitle =
+            titleInput.value.trim() || `卡组${history.length + 1}`;
+          history.push({
+            title: cardSetTitle,
+            factors: JSON.parse(JSON.stringify(allFactors)),
+            correctAnswers: JSON.parse(JSON.stringify(correctAnswers)),
+          });
+          saveHistory();
+          renderHistory();
+          renderMatchingArea(allFactors, correctAnswers);
         });
 
-        function renderHistory() {
-            const historyList = document.getElementById('historyList');
-            historyList.innerHTML = '';
-            history.forEach((entry, index) => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.textContent = entry.title ? `${entry.title}` : `卡组 ${index + 1}`;
-                div.addEventListener('click', () => showReviewModePopup((mode) => chooseHistoryMode(index, mode)));
-                historyList.appendChild(div);
-            });
+      function renderHistory() {
+        const historyList = document.getElementById("historyList");
+        historyList.innerHTML = "";
+        history.forEach((entry, index) => {
+          const div = document.createElement("div");
+          div.className = "history-item";
+          div.textContent = entry.title
+            ? `${entry.title}`
+            : `卡组 ${index + 1}`;
+          div.addEventListener("click", () =>
+            showReviewModePopup((mode) => chooseHistoryMode(index, mode))
+          );
+          historyList.appendChild(div);
+        });
+      }
+
+      // 新增：弹窗选择复习模式
+      function showReviewModePopup(callback) {
+        reviewModeCallback = callback;
+        document.getElementById("reviewModePopup").style.display = "flex";
+      }
+      document.getElementById("reviewAllBtn").onclick = function () {
+        document.getElementById("reviewModePopup").style.display = "none";
+        if (reviewModeCallback) reviewModeCallback("all");
+      };
+      document.getElementById("reviewWrongBtn").onclick = function () {
+        document.getElementById("reviewModePopup").style.display = "none";
+        if (reviewModeCallback) reviewModeCallback("wrong");
+      };
+      document.getElementById("cancelReviewBtn").onclick = function () {
+        document.getElementById("reviewModePopup").style.display = "none";
+      };
+
+      function chooseHistoryMode(index, mode) {
+        const entry = history[index];
+        if (mode === "all") {
+          allFactors = entry.factors;
+          correctAnswers = entry.correctAnswers;
+          renderMatchingArea(entry.factors, entry.correctAnswers);
+        } else if (mode === "wrong") {
+          const wrongFactors = entry.factors.filter((f) => f.correct === false);
+          const wrongAnswers = {};
+          Object.keys(entry.correctAnswers).forEach((groupName) => {
+            const filtered = entry.correctAnswers[groupName].filter((item) =>
+              wrongFactors.find((f) => f.text === item)
+            );
+            if (filtered.length > 0) wrongAnswers[groupName] = filtered;
+          });
+          if (Object.keys(wrongAnswers).length === 0) {
+            alert("该卡组没有历史错题！");
+            return;
+          }
+          allFactors = wrongFactors;
+          correctAnswers = wrongAnswers;
+          renderMatchingArea(wrongFactors, wrongAnswers);
         }
+      }
 
-        // 新增：弹窗选择复习模式
-        function showReviewModePopup(callback) {
-            reviewModeCallback = callback;
-            document.getElementById('reviewModePopup').style.display = 'flex';
+      function renderMatchingArea(factors, answers) {
+        const matchingArea = document.getElementById("matchingArea");
+        matchingArea.innerHTML = "";
+
+        const grid = document.createElement("div");
+        grid.className = "grid";
+        grid.id = "itemPool";
+
+        factors.forEach((factor) => {
+          const div = createDraggableItem(factor.text, factor.group);
+          grid.appendChild(div);
+        });
+
+        matchingArea.appendChild(grid);
+
+        const columns = document.createElement("div");
+        columns.className = "columns";
+
+        Object.keys(answers).forEach((groupName) => {
+          const question = document.createElement("div");
+          question.className = "question";
+          question.innerHTML = `<strong>${groupName}：</strong>`;
+
+          // dropzone wrapper
+          const dropzoneWrapper = document.createElement("div");
+          dropzoneWrapper.className = "dropzone-wrapper";
+
+          // 主 dropzone
+          const dropzone = document.createElement("div");
+          dropzone.className = "dropzone";
+          dropzone.dataset.group = groupName;
+
+          enableDrop(dropzone);
+
+          dropzoneWrapper.appendChild(dropzone);
+
+          // 初次渲染时就分列
+          splitDropzoneColumns(dropzone, dropzoneWrapper);
+
+          // 结果区域
+          const resultDiv = document.createElement("div");
+          resultDiv.className = "result";
+          resultDiv.id = "result-" + groupName;
+
+          question.appendChild(dropzoneWrapper);
+          question.appendChild(resultDiv);
+          columns.appendChild(question);
+
+          // --- 多栏分割 ---
+          dropzone.addEventListener("DOMSubtreeModified", function () {
+            splitDropzoneColumns(dropzone, dropzoneWrapper);
+          });
+        });
+
+        matchingArea.appendChild(columns);
+
+        document.getElementById("checkAnswers").style.display = "inline-block";
+      }
+
+      // 多栏分割逻辑
+      function splitDropzoneColumns(dropzone, wrapper) {
+        if (!dropzone || !wrapper) return;
+        // 收集所有 item
+        let items = [];
+        wrapper.querySelectorAll(".dropzone, .dropzone-col").forEach((col) => {
+          items = items.concat(Array.from(col.children));
+        });
+        // 清空 wrapper
+        wrapper.innerHTML = "";
+
+        // 计算栏数
+        let colCount = 1;
+        if (items.length > 3) colCount = 2;
+        if (items.length > 6) colCount = 3;
+        if (items.length > 12) colCount = 4;
+
+        // 分配到多栏
+        const columns = Array.from({ length: colCount }, () => []);
+        items.forEach((item, idx) => {
+          columns[idx % colCount].push(item);
+        });
+
+        // 创建新栏
+        for (let i = 0; i < colCount; i++) {
+          const colDiv = document.createElement("div");
+          colDiv.className = i === 0 ? "dropzone" : "dropzone-col";
+          colDiv.style.display = "flex";
+          colDiv.style.flexDirection = "column";
+          colDiv.style.flex = "1 1 0";
+          colDiv.style.gap = "4px";
+          colDiv.style.minWidth = "60px";
+          columns[i].forEach((item) => colDiv.appendChild(item));
+          // 只主栏可拖拽
+          if (i === 0) enableDrop(colDiv);
+          wrapper.appendChild(colDiv);
         }
-        document.getElementById('reviewAllBtn').onclick = function () {
-            document.getElementById('reviewModePopup').style.display = 'none';
-            if (reviewModeCallback) reviewModeCallback('all');
-        };
-        document.getElementById('reviewWrongBtn').onclick = function () {
-            document.getElementById('reviewModePopup').style.display = 'none';
-            if (reviewModeCallback) reviewModeCallback('wrong');
-        };
-        document.getElementById('cancelReviewBtn').onclick = function () {
-            document.getElementById('reviewModePopup').style.display = 'none';
-        };
+      }
 
-        function chooseHistoryMode(index, mode) {
-            const entry = history[index];
-            if (mode === 'all') {
-                allFactors = entry.factors;
-                correctAnswers = entry.correctAnswers;
-                renderMatchingArea(entry.factors, entry.correctAnswers);
-            } else if (mode === 'wrong') {
-                const wrongFactors = entry.factors.filter(f => f.correct === false);
-                const wrongAnswers = {};
-                Object.keys(entry.correctAnswers).forEach(groupName => {
-                    const filtered = entry.correctAnswers[groupName].filter(item => wrongFactors.find(f => f.text === item));
-                    if (filtered.length > 0) wrongAnswers[groupName] = filtered;
-                });
-                if (Object.keys(wrongAnswers).length === 0) {
-                    alert('该卡组没有历史错题！');
-                    return;
-                }
-                allFactors = wrongFactors;
-                correctAnswers = wrongAnswers;
-                renderMatchingArea(wrongFactors, wrongAnswers);
-            }
+      function createDraggableItem(text, group) {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.draggable = true;
+        div.textContent = text;
+        div.dataset.group = group;
+
+        div.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("text/plain", JSON.stringify({ text, group }));
+        });
+
+        return div;
+      }
+
+      function enableDrop(dropzone) {
+        dropzone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dropzone.classList.add("over");
+        });
+
+        dropzone.addEventListener("dragleave", () => {
+          dropzone.classList.remove("over");
+        });
+
+        dropzone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          dropzone.classList.remove("over");
+          const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+
+          removeItemFromAll(data.text);
+
+          const itemDiv = createDraggableItem(data.text, data.group);
+          dropzone.appendChild(itemDiv);
+        });
+      }
+
+      document.addEventListener("dragend", function (e) {
+        const itemPool = document.getElementById("itemPool");
+        if (e.target.classList.contains("item")) {
+          const rect = itemPool.getBoundingClientRect();
+          if (
+            e.pageX >= rect.left &&
+            e.pageX <= rect.right &&
+            e.pageY >= rect.top &&
+            e.pageY <= rect.bottom
+          ) {
+            removeItemFromAll(e.target.textContent);
+            itemPool.appendChild(e.target);
+          }
         }
+      });
 
-        function renderMatchingArea(factors, answers) {
-            const matchingArea = document.getElementById('matchingArea');
-            matchingArea.innerHTML = '';
+      function removeItemFromAll(text) {
+        document.querySelectorAll(".item").forEach((item) => {
+          if (item.textContent === text) {
+            item.remove();
+          }
+        });
+      }
 
-            const grid = document.createElement('div');
-            grid.className = 'grid';
-            grid.id = 'itemPool';
-
-            factors.forEach((factor) => {
-                const div = createDraggableItem(factor.text, factor.group);
-                grid.appendChild(div);
-            });
-
-            matchingArea.appendChild(grid);
-
-            const columns = document.createElement('div');
-            columns.className = 'columns';
-
-            Object.keys(answers).forEach(groupName => {
-                const question = document.createElement('div');
-                question.className = 'question';
-                question.innerHTML = `<strong>${groupName}：</strong>`;
-
-                // dropzone wrapper
-                const dropzoneWrapper = document.createElement('div');
-                dropzoneWrapper.className = 'dropzone-wrapper';
-
-                // 主 dropzone
-                const dropzone = document.createElement('div');
-                dropzone.className = 'dropzone';
-                dropzone.dataset.group = groupName;
-
-                enableDrop(dropzone);
-
-                dropzoneWrapper.appendChild(dropzone);
-
-                // 结果区域
-                const resultDiv = document.createElement('div');
-                resultDiv.className = 'result';
-                resultDiv.id = 'result-' + groupName;
-
-                question.appendChild(dropzoneWrapper);
-                question.appendChild(resultDiv);
-                columns.appendChild(question);
-
-                // --- 多栏分割 ---
-                dropzone.addEventListener('DOMSubtreeModified', function () {
-                    splitDropzoneColumns(dropzone, dropzoneWrapper);
-                });
-            });
-
-            matchingArea.appendChild(columns);
-
-            document.getElementById('checkAnswers').style.display = 'inline-block';
-        }
-
-        // 多栏分割逻辑
-        function splitDropzoneColumns(dropzone, wrapper) {
-            if (!dropzone || !wrapper) return;
-            // 收集所有 item
+      document
+        .getElementById("checkAnswers")
+        .addEventListener("click", function () {
+          Object.keys(correctAnswers).forEach((groupName) => {
+            const dropzone = document.querySelector(
+              `.dropzone[data-group='${groupName}']`
+            );
+            // 兼容多栏
             let items = [];
-            wrapper.querySelectorAll('.dropzone, .dropzone-col').forEach(col => {
-                items = items.concat(Array.from(col.children));
-            });
-            // 清空 wrapper
-            wrapper.innerHTML = '';
-
-            // 计算栏数
-            let colCount = 1;
-            if (items.length > 3) colCount = 2;
-            if (items.length > 6) colCount = 3;
-            if (items.length > 12) colCount = 4;
-
-            // 分配到多栏
-            const columns = Array.from({ length: colCount }, () => []);
-            items.forEach((item, idx) => {
-                columns[idx % colCount].push(item);
-            });
-
-            // 创建新栏
-            for (let i = 0; i < colCount; i++) {
-                const colDiv = document.createElement('div');
-                colDiv.className = (i === 0) ? 'dropzone' : 'dropzone-col';
-                colDiv.style.display = 'flex';
-                colDiv.style.flexDirection = 'column';
-                colDiv.style.flex = '1 1 0';
-                colDiv.style.gap = '4px';
-                colDiv.style.minWidth = '60px';
-                columns[i].forEach(item => colDiv.appendChild(item));
-                // 只主栏可拖拽
-                if (i === 0) enableDrop(colDiv);
-                wrapper.appendChild(colDiv);
+            if (dropzone) {
+              items = Array.from(dropzone.querySelectorAll(".item"));
+            } else {
+              // 多栏时，主栏为第一个
+              const wrapper = document.querySelector(`.dropzone-wrapper`);
+              if (wrapper) {
+                items = Array.from(
+                  wrapper.querySelectorAll(".dropzone, .dropzone-col")
+                ).flatMap((col) => Array.from(col.querySelectorAll(".item")));
+              }
             }
-        }
-
-        function createDraggableItem(text, group) {
-            const div = document.createElement('div');
-            div.className = 'item';
-            div.draggable = true;
-            div.textContent = text;
-            div.dataset.group = group;
-
-            div.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', JSON.stringify({ text, group }));
-            });
-
-            return div;
-        }
-
-        function enableDrop(dropzone) {
-            dropzone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropzone.classList.add('over');
-            });
-
-            dropzone.addEventListener('dragleave', () => {
-                dropzone.classList.remove('over');
-            });
-
-            dropzone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropzone.classList.remove('over');
-                const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-
-                removeItemFromAll(data.text);
-
-                const itemDiv = createDraggableItem(data.text, data.group);
-                dropzone.appendChild(itemDiv);
-            });
-        }
-
-        document.addEventListener('dragend', function (e) {
-            const itemPool = document.getElementById('itemPool');
-            if (e.target.classList.contains('item')) {
-                const rect = itemPool.getBoundingClientRect();
-                if (e.pageX >= rect.left && e.pageX <= rect.right && e.pageY >= rect.top && e.pageY <= rect.bottom) {
-                    removeItemFromAll(e.target.textContent);
-                    itemPool.appendChild(e.target);
+            const correctSet = new Set(correctAnswers[groupName]);
+            let correctCount = 0;
+            items.forEach((item) => {
+              const isCorrect = correctSet.has(item.textContent);
+              if (isCorrect) {
+                item.style.backgroundColor = "#b2f5b2";
+                correctCount++;
+              } else {
+                item.style.backgroundColor = "#f5b2b2";
+              }
+              allFactors.forEach((f) => {
+                if (f.text === item.textContent) {
+                  f.correct = isCorrect;
                 }
-            }
+              });
+            });
+            const resultDiv = document.getElementById("result-" + groupName);
+            resultDiv.textContent = `正确数：${correctCount} / ${correctAnswers[groupName].length}`;
+          });
+
+          // 覆盖同步到历史卡组
+          history.forEach((entry) => {
+            entry.factors.forEach((f) => {
+              const updated = allFactors.find((af) => af.text === f.text);
+              if (updated) f.correct = updated.correct;
+            });
+          });
+          saveHistory();
         });
 
-        function removeItemFromAll(text) {
-            document.querySelectorAll('.item').forEach(item => {
-                if (item.textContent === text) {
-                    item.remove();
-                }
-            });
-        }
+      function saveHistory() {
+        localStorage.setItem("cardGroupHistory", JSON.stringify(history));
+      }
 
-        document.getElementById('checkAnswers').addEventListener('click', function () {
-            Object.keys(correctAnswers).forEach(groupName => {
-                const dropzone = document.querySelector(`.dropzone[data-group='${groupName}']`);
-                // 兼容多栏
-                let items = [];
-                if (dropzone) {
-                    items = Array.from(dropzone.querySelectorAll('.item'));
-                } else {
-                    // 多栏时，主栏为第一个
-                    const wrapper = document.querySelector(`.dropzone-wrapper`);
-                    if (wrapper) {
-                        items = Array.from(wrapper.querySelectorAll('.dropzone, .dropzone-col')).flatMap(col => Array.from(col.querySelectorAll('.item')));
-                    }
-                }
-                const correctSet = new Set(correctAnswers[groupName]);
-                let correctCount = 0;
-                items.forEach(item => {
-                    const isCorrect = correctSet.has(item.textContent);
-                    if (isCorrect) {
-                        item.style.backgroundColor = '#b2f5b2';
-                        correctCount++;
-                    } else {
-                        item.style.backgroundColor = '#f5b2b2';
-                    }
-                    allFactors.forEach(f => {
-                        if (f.text === item.textContent) {
-                            f.correct = isCorrect;
-                        }
-                    });
-                });
-                const resultDiv = document.getElementById('result-' + groupName);
-                resultDiv.textContent = `正确数：${correctCount} / ${correctAnswers[groupName].length}`;
-            });
+      function backupHistory() {
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+        const key = "cardGroupHistory_backup_" + dateStr;
+        localStorage.setItem(key, JSON.stringify(history));
+      }
 
-            // 覆盖同步到历史卡组
-            history.forEach(entry => {
-                entry.factors.forEach(f => {
-                    const updated = allFactors.find(af => af.text === f.text);
-                    if (updated) f.correct = updated.correct;
-                });
-            });
-            saveHistory();
-        });
+      // 启动时立即备份一次
+      backupHistory();
+      // 每24小时备份一次
+      setInterval(backupHistory, 24 * 60 * 60 * 1000);
 
-        function saveHistory() {
-            localStorage.setItem('cardGroupHistory', JSON.stringify(history));
-        }
-
-        function backupHistory() {
-            const now = new Date();
-            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-            const key = 'cardGroupHistory_backup_' + dateStr;
-            localStorage.setItem(key, JSON.stringify(history));
-        }
-
-        // 启动时立即备份一次
-        backupHistory();
-        // 每24小时备份一次
-        setInterval(backupHistory, 24 * 60 * 60 * 1000);
-
-        // 加载历史卡组时自动恢复
-        const saved = localStorage.getItem('cardGroupHistory');
-        if (saved) {
-            history = JSON.parse(saved);
-            renderHistory();
-        }
+      // 加载历史卡组时自动恢复
+      const saved = localStorage.getItem("cardGroupHistory");
+      if (saved) {
+        history = JSON.parse(saved);
+        renderHistory();
+      }
     </script>
-</body>
-
+  </body>
 </html>
