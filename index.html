@@ -4,6 +4,24 @@
 <head>
   <meta charset="UTF-8" />
   <title>学成选择题——配对卡片练习</title>
+
+  <!-- 腾讯云云开发SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/tcb-js-sdk@latest/dist/tcb.min.js"></script>
+  <script src="cloud-config.js"></script>
+  <script src="cloud-db.js"></script>
+
+  <!-- 云托管环境下的云开发初始化 -->
+  <script>
+    // 在云托管环境中，可以直接使用云开发数据库
+    // 不需要额外的认证，因为已经在云托管环境中
+    if (typeof tcb !== 'undefined') {
+      // 自动初始化云开发
+      const app = tcb.init({
+        env: CLOUD_CONFIG.envId
+      });
+      console.log('云开发已初始化');
+    }
+  </script>
   <style>
     body {
       font-family: "Segoe UI", "PingFang SC", "Hiragino Sans", Arial,
@@ -667,17 +685,24 @@
     let reviewModeCallback = null; // 用于popup回调
 
     // 初始化用户系统
-    function initUserSystem() {
+    async function initUserSystem() {
       // 检查是否已登录
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
         showMainInterface();
-        initUserData(); // 初始化用户数据
+        await initUserData(); // 初始化用户数据
       } else {
         showAuthInterface();
       }
     }
+
+    initUserSystem();
+    // 启动时加载历史标签池
+    (async function () {
+      await loadHistoryTags();
+      renderHistoryTags();
+    })();
 
     // 显示授权界面
     function showAuthInterface() {
@@ -697,7 +722,7 @@
     }
 
     // 验证授权码（Mock版本）
-    function validateAuthCode(code) {
+    async function validateAuthCode(code) {
       // Mock验证：任何非空输入都成功
       if (code && code.trim()) {
         // 授权码就是userId
@@ -708,14 +733,26 @@
           loginTime: new Date().toISOString()
         };
 
-        // 保存用户信息
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        try {
+          // 保存用户信息到云数据库
+          await cloudDB.saveUser(currentUser);
+          console.log('用户信息已保存到云数据库');
+        } catch (error) {
+          console.error('保存用户信息到云数据库失败，使用本地存储:', error);
+          // 降级到本地存储
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        }
 
         // 显示主界面
         showMainInterface();
 
         // 初始化用户数据
-        initUserData();
+        await initUserData();
+
+        // 尝试迁移本地数据到云端
+        setTimeout(() => {
+          migrateDataToCloud();
+        }, 1000);
 
         showToast('授权成功！欢迎使用配对题生成器', 'success');
         return true;
@@ -724,7 +761,7 @@
     }
 
     // 初始化用户数据
-    function initUserData() {
+    async function initUserData() {
       // 清空现有数据
       allFactors = [];
       correctAnswers = {};
@@ -732,7 +769,7 @@
       historyTags = [];
 
       // 加载用户数据
-      loadUserData();
+      await loadUserData();
 
       // 渲染界面
       renderHistory();
@@ -740,18 +777,61 @@
     }
 
     // 加载用户数据
-    function loadUserData() {
-      const userHistory = localStorage.getItem(`history_${currentUser.userId}`);
-      if (userHistory) {
-        history = JSON.parse(userHistory);
+    async function loadUserData() {
+      if (!currentUser) return;
+
+      try {
+        // 尝试从云数据库加载数据
+        const cardSets = await cloudDB.getCardSets(currentUser.userId);
+        const tags = await cloudDB.getHistoryTags(currentUser.userId);
+
+        history = cardSets;
+        historyTags = tags;
+
+        // 渲染数据
+        renderHistory();
+        renderHistoryTags();
+
+        console.log('数据已从云数据库加载');
+      } catch (error) {
+        console.error('从云数据库加载数据失败，使用本地存储:', error);
+        // 降级到本地存储
+        const userHistory = localStorage.getItem(`history_${currentUser.userId}`);
+        if (userHistory) {
+          history = JSON.parse(userHistory);
+        }
+        renderHistory();
       }
     }
 
     // 保存用户数据
-    function saveUserData() {
-      if (currentUser) {
+    async function saveUserData() {
+      if (!currentUser) return;
+
+      try {
+        // 保存到云数据库
+        await cloudDB.saveCardSets(currentUser.userId, history);
+        await cloudDB.saveHistoryTags(currentUser.userId, historyTags);
+
+        console.log('数据已保存到云数据库');
+      } catch (error) {
+        console.error('保存到云数据库失败，使用本地存储:', error);
+        // 降级到本地存储
         localStorage.setItem(`history_${currentUser.userId}`, JSON.stringify(history));
-        saveHistoryTags(); // 保存历史标签
+        localStorage.setItem(`cardSetHistoryTags_${currentUser.userId}`, JSON.stringify(historyTags));
+      }
+    }
+
+    // 数据迁移函数
+    async function migrateDataToCloud() {
+      if (!currentUser) return;
+
+      try {
+        await cloudDB.migrateFromLocalStorage(currentUser.userId);
+        showToast('数据已迁移到云端', 'success');
+      } catch (error) {
+        console.error('数据迁移失败:', error);
+        showToast('数据迁移失败，请稍后重试', 'error');
       }
     }
 
@@ -932,8 +1012,10 @@
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
-        saveHistory();
-        renderHistory();
+        (async function () {
+          await saveHistory();
+          renderHistory();
+        })();
         renderMatchingArea(allFactors, correctAnswers);
         // 显示复习区域
         document.getElementById("reviewSection").style.display = "block";
@@ -1303,7 +1385,9 @@
             if (updated) f.correct = updated.correct;
           });
         });
-        saveHistory();
+        (async function () {
+          await saveHistory();
+        })();
 
         // 新增：如果所有item都被拖入分类栏，则锁定所有分类栏内的item，并显示"再来一遍"按钮
         const itemPool = document.getElementById("itemPool");
@@ -1317,9 +1401,15 @@
         }
       });
 
-    function saveHistory() {
+    async function saveHistory() {
       if (currentUser) {
-        localStorage.setItem(`history_${currentUser.userId}`, JSON.stringify(history));
+        try {
+          await cloudDB.saveCardSets(currentUser.userId, history);
+          console.log('历史卡组已保存到云数据库');
+        } catch (error) {
+          console.error('保存历史卡组到云数据库失败，使用本地存储:', error);
+          localStorage.setItem(`history_${currentUser.userId}`, JSON.stringify(history));
+        }
       }
     }
 
@@ -1442,8 +1532,10 @@
         updatedAt: new Date().toISOString()
       };
 
-      saveHistory();
-      renderHistory();
+      (async function () {
+        await saveHistory();
+        renderHistory();
+      })();
 
       // 重置表单和按钮
       resetForm();
@@ -1463,8 +1555,10 @@
 
         // 删除卡组
         history.splice(index, 1);
-        saveHistory();
-        renderHistory();
+        (async function () {
+          await saveHistory();
+          renderHistory();
+        })();
 
         // 如果正在复习被删除的卡组，清除复习数据
         if (isCurrentlyReviewing) {
@@ -1492,19 +1586,31 @@
     let historyTags = [];
 
     // 加载历史标签池
-    function loadHistoryTags() {
+    async function loadHistoryTags() {
       if (!currentUser) return;
-      const saved = localStorage.getItem(`cardSetHistoryTags_${currentUser.userId}`);
-      if (saved) {
-        historyTags = JSON.parse(saved);
-      } else {
-        historyTags = [];
+      try {
+        historyTags = await cloudDB.getHistoryTags(currentUser.userId);
+        console.log('历史标签已从云数据库加载');
+      } catch (error) {
+        console.error('从云数据库加载历史标签失败，使用本地存储:', error);
+        const saved = localStorage.getItem(`cardSetHistoryTags_${currentUser.userId}`);
+        if (saved) {
+          historyTags = JSON.parse(saved);
+        } else {
+          historyTags = [];
+        }
       }
     }
     // 保存历史标签池
-    function saveHistoryTags() {
+    async function saveHistoryTags() {
       if (!currentUser) return;
-      localStorage.setItem(`cardSetHistoryTags_${currentUser.userId}`, JSON.stringify(historyTags));
+      try {
+        await cloudDB.saveHistoryTags(currentUser.userId, historyTags);
+        console.log('历史标签已保存到云数据库');
+      } catch (error) {
+        console.error('保存历史标签到云数据库失败，使用本地存储:', error);
+        localStorage.setItem(`cardSetHistoryTags_${currentUser.userId}`, JSON.stringify(historyTags));
+      }
     }
     // 添加到历史标签池
     function addToHistoryTags(tag) {
@@ -1512,11 +1618,15 @@
         historyTags.unshift(tag);
         // 最多保存40个
         if (historyTags.length > 40) historyTags = historyTags.slice(0, 40);
-        saveHistoryTags();
+        (async function () {
+          await saveHistoryTags();
+        })();
       } else {
         // 移到最前
         historyTags = [tag, ...historyTags.filter(t => t !== tag)];
-        saveHistoryTags();
+        (async function () {
+          await saveHistoryTags();
+        })();
       }
     }
 
@@ -1565,7 +1675,9 @@
     // 删除历史标签
     function removeHistoryTag(tagText) {
       historyTags = historyTags.filter(tag => tag !== tagText);
-      saveHistoryTags();
+      (async function () {
+        await saveHistoryTags();
+      })();
       renderHistoryTags();
       showToast(`已删除历史标签"${tagText}"`, "success");
     }
@@ -1793,24 +1905,32 @@
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
-        saveHistory();
-        renderHistory();
+        (async function () {
+          await saveHistory();
+          renderHistory();
+        })();
         renderMatchingArea(allFactors, correctAnswers);
       };
     }
 
     // 授权验证事件监听器
-    document.getElementById('authSubmitBtn').addEventListener('click', function () {
+    document.getElementById('authSubmitBtn').addEventListener('click', async function () {
       const authCode = document.getElementById('authCodeInput').value.trim();
       if (!authCode) {
         showToast('请输入授权码', 'error');
         return;
       }
 
-      if (validateAuthCode(authCode)) {
-        document.getElementById('authCodeInput').value = '';
-      } else {
-        showToast('授权码验证失败', 'error');
+      try {
+        const success = await validateAuthCode(authCode);
+        if (success) {
+          document.getElementById('authCodeInput').value = '';
+        } else {
+          showToast('授权码验证失败', 'error');
+        }
+      } catch (error) {
+        console.error('授权验证失败:', error);
+        showToast('授权验证失败，请稍后重试', 'error');
       }
     });
 
@@ -1844,12 +1964,6 @@
         });
       }
     });
-
-    // 初始化用户系统
-    initUserSystem();
-    // 启动时加载历史标签池
-    loadHistoryTags();
-    renderHistoryTags();
   </script>
 </body>
 

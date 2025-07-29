@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>云数据库测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>腾讯云云数据库测试</h1>
+
+    <div class="test-section">
+        <h3>1. 环境配置测试</h3>
+        <button onclick="testConfig()">测试配置</button>
+        <div id="configResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 用户数据测试</h3>
+        <input type="text" id="testUserId" placeholder="输入测试用户ID" value="test-user-001">
+        <button onclick="testUserData()">测试用户数据</button>
+        <div id="userResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 卡组数据测试</h3>
+        <button onclick="testCardSets()">测试卡组数据</button>
+        <div id="cardResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. 标签数据测试</h3>
+        <button onclick="testTags()">测试标签数据</button>
+        <div id="tagResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. 数据迁移测试</h3>
+        <button onclick="testMigration()">测试数据迁移</button>
+        <div id="migrationResult" class="result"></div>
+    </div>
+
+    <!-- 引入云开发SDK和配置 -->
+    <script src="https://cdn.jsdelivr.net/npm/tcb-js-sdk@latest/dist/tcb.min.js"></script>
+    <script src="cloud-config.js"></script>
+    <script src="cloud-db.js"></script>
+
+    <script>
+        // 测试配置
+        async function testConfig() {
+            const resultDiv = document.getElementById('configResult');
+            try {
+                const app = initCloud();
+                if (app) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = '✅ 云开发配置正常\n环境ID: ' + CLOUD_CONFIG.envId;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = '❌ 云开发配置失败\n请检查环境ID是否正确';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 配置测试失败: ' + error.message;
+            }
+        }
+
+        // 测试用户数据
+        async function testUserData() {
+            const resultDiv = document.getElementById('userResult');
+            const userId = document.getElementById('testUserId').value;
+
+            try {
+                // 测试保存用户
+                const testUser = {
+                    userId: userId,
+                    authCode: userId,
+                    loginTime: new Date().toISOString()
+                };
+
+                await cloudDB.saveUser(testUser);
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ 用户数据保存成功\n用户ID: ' + userId;
+
+                // 测试获取用户
+                const savedUser = await cloudDB.getUser(userId);
+                if (savedUser) {
+                    resultDiv.textContent += '\n✅ 用户数据获取成功';
+                } else {
+                    resultDiv.textContent += '\n❌ 用户数据获取失败';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 用户数据测试失败: ' + error.message;
+            }
+        }
+
+        // 测试卡组数据
+        async function testCardSets() {
+            const resultDiv = document.getElementById('cardResult');
+            const userId = document.getElementById('testUserId').value;
+
+            try {
+                const testCardSets = [
+                    {
+                        id: 'test-card-1',
+                        title: '测试卡组1',
+                        tags: ['测试', '示例'],
+                        groups: { '分组1': ['项目1', '项目2'] },
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                ];
+
+                await cloudDB.saveCardSets(userId, testCardSets);
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ 卡组数据保存成功';
+
+                const savedCardSets = await cloudDB.getCardSets(userId);
+                if (savedCardSets.length > 0) {
+                    resultDiv.textContent += '\n✅ 卡组数据获取成功\n数量: ' + savedCardSets.length;
+                } else {
+                    resultDiv.textContent += '\n❌ 卡组数据获取失败';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 卡组数据测试失败: ' + error.message;
+            }
+        }
+
+        // 测试标签数据
+        async function testTags() {
+            const resultDiv = document.getElementById('tagResult');
+            const userId = document.getElementById('testUserId').value;
+
+            try {
+                const testTags = ['测试标签1', '测试标签2', '测试标签3'];
+
+                await cloudDB.saveHistoryTags(userId, testTags);
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ 标签数据保存成功';
+
+                const savedTags = await cloudDB.getHistoryTags(userId);
+                if (savedTags.length > 0) {
+                    resultDiv.textContent += '\n✅ 标签数据获取成功\n标签: ' + savedTags.join(', ');
+                } else {
+                    resultDiv.textContent += '\n❌ 标签数据获取失败';
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 标签数据测试失败: ' + error.message;
+            }
+        }
+
+        // 测试数据迁移
+        async function testMigration() {
+            const resultDiv = document.getElementById('migrationResult');
+            const userId = document.getElementById('testUserId').value;
+
+            try {
+                // 先创建一些本地数据
+                localStorage.setItem(`history_${userId}`, JSON.stringify([
+                    {
+                        id: 'local-card-1',
+                        title: '本地卡组1',
+                        tags: ['本地', '测试'],
+                        groups: { '本地分组': ['本地项目1', '本地项目2'] },
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                ]));
+
+                localStorage.setItem(`cardSetHistoryTags_${userId}`, JSON.stringify(['本地标签1', '本地标签2']));
+
+                await cloudDB.migrateFromLocalStorage(userId);
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '✅ 数据迁移测试成功';
+
+                // 验证迁移结果
+                const migratedCardSets = await cloudDB.getCardSets(userId);
+                const migratedTags = await cloudDB.getHistoryTags(userId);
+
+                resultDiv.textContent += '\n迁移的卡组数量: ' + migratedCardSets.length;
+                resultDiv.textContent += '\n迁移的标签数量: ' + migratedTags.length;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 数据迁移测试失败: ' + error.message;
+            }
+        }
+    </script>
+</body>
+
+</html>
