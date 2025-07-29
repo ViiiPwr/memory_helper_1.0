@@ -7,19 +7,31 @@ class CloudDatabase {
 
     // 检查云开发是否可用
     isAvailable() {
-        return this.db !== null;
+        // 检查tcb SDK是否加载
+        if (typeof tcb === 'undefined') {
+            console.log('tcb SDK未加载');
+            return false;
+        }
+
+        // 检查数据库实例是否可用
+        if (!this.db) {
+            console.log('数据库实例不可用');
+            return false;
+        }
+
+        // 检查环境ID是否配置
+        if (!CLOUD_CONFIG || !CLOUD_CONFIG.envId || CLOUD_CONFIG.envId === 'your-env-id-here') {
+            console.log('环境ID未正确配置');
+            return false;
+        }
+
+        return true;
     }
 
     // ==================== 用户相关操作 ====================
 
     // 保存用户信息
     async saveUser(userData) {
-        if (!this.isAvailable()) {
-            console.warn('云开发不可用，使用本地存储');
-            localStorage.setItem('currentUser', JSON.stringify(userData));
-            return;
-        }
-
         try {
             const { userId } = userData;
             const user = {
@@ -53,12 +65,6 @@ class CloudDatabase {
 
     // 获取用户信息
     async getUser(userId) {
-        if (!this.isAvailable()) {
-            console.warn('云开发不可用，使用本地存储');
-            const savedUser = localStorage.getItem('currentUser');
-            return savedUser ? JSON.parse(savedUser) : null;
-        }
-
         try {
             const result = await this.db.collection(this.collections.users)
                 .where({ userId })
@@ -77,12 +83,6 @@ class CloudDatabase {
 
     // 保存卡组数据
     async saveCardSets(userId, cardSets) {
-        if (!this.isAvailable()) {
-            console.warn('云开发不可用，使用本地存储');
-            localStorage.setItem(`history_${userId}`, JSON.stringify(cardSets));
-            return;
-        }
-
         try {
             // 删除该用户的所有卡组
             await this.db.collection(this.collections.cardSets)
@@ -114,12 +114,6 @@ class CloudDatabase {
 
     // 获取卡组数据
     async getCardSets(userId) {
-        if (!this.isAvailable()) {
-            console.warn('云开发不可用，使用本地存储');
-            const userHistory = localStorage.getItem(`history_${userId}`);
-            return userHistory ? JSON.parse(userHistory) : [];
-        }
-
         try {
             const result = await this.db.collection(this.collections.cardSets)
                 .where({ userId })
@@ -146,12 +140,6 @@ class CloudDatabase {
 
     // 保存历史标签
     async saveHistoryTags(userId, tags) {
-        if (!this.isAvailable()) {
-            console.warn('云开发不可用，使用本地存储');
-            localStorage.setItem(`cardSetHistoryTags_${userId}`, JSON.stringify(tags));
-            return;
-        }
-
         try {
             // 检查是否已存在该用户的标签记录
             const existingTags = await this.db.collection(this.collections.historyTags)
@@ -186,12 +174,6 @@ class CloudDatabase {
 
     // 获取历史标签
     async getHistoryTags(userId) {
-        if (!this.isAvailable()) {
-            console.warn('云开发不可用，使用本地存储');
-            const saved = localStorage.getItem(`cardSetHistoryTags_${userId}`);
-            return saved ? JSON.parse(saved) : [];
-        }
-
         try {
             const result = await this.db.collection(this.collections.historyTags)
                 .where({ userId })
@@ -210,11 +192,6 @@ class CloudDatabase {
 
     // 从本地存储迁移数据到云数据库
     async migrateFromLocalStorage(userId) {
-        if (!this.isAvailable()) {
-            console.warn('云开发不可用，无法迁移数据');
-            return;
-        }
-
         try {
             // 迁移卡组数据
             const localHistory = localStorage.getItem(`history_${userId}`);
