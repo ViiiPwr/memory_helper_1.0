@@ -588,7 +588,7 @@
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
         showMainInterface();
-        loadUserData();
+        initUserData(); // 初始化用户数据
       } else {
         showAuthInterface();
       }
@@ -615,7 +615,8 @@
     function validateAuthCode(code) {
       // Mock验证：任何非空输入都成功
       if (code && code.trim()) {
-        const userId = 'USER_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        // 授权码就是userId
+        const userId = code.trim();
         currentUser = {
           userId: userId,
           authCode: code,
@@ -643,9 +644,14 @@
       allFactors = [];
       correctAnswers = {};
       history = [];
+      historyTags = [];
 
       // 加载用户数据
       loadUserData();
+
+      // 渲染界面
+      renderHistory();
+      renderHistoryTags();
     }
 
     // 加载用户数据
@@ -653,7 +659,6 @@
       const userHistory = localStorage.getItem(`history_${currentUser.userId}`);
       if (userHistory) {
         history = JSON.parse(userHistory);
-        renderHistory();
       }
     }
 
@@ -661,6 +666,7 @@
     function saveUserData() {
       if (currentUser) {
         localStorage.setItem(`history_${currentUser.userId}`, JSON.stringify(history));
+        saveHistoryTags(); // 保存历史标签
       }
     }
 
@@ -675,6 +681,11 @@
         allFactors = [];
         correctAnswers = {};
         history = [];
+        historyTags = [];
+
+        // 渲染空界面
+        renderHistory();
+        renderHistoryTags();
 
         // 显示授权界面
         showAuthInterface();
@@ -1397,14 +1408,18 @@
 
     // 加载历史标签池
     function loadHistoryTags() {
-      const saved = localStorage.getItem("cardSetHistoryTags");
+      if (!currentUser) return;
+      const saved = localStorage.getItem(`cardSetHistoryTags_${currentUser.userId}`);
       if (saved) {
         historyTags = JSON.parse(saved);
+      } else {
+        historyTags = [];
       }
     }
     // 保存历史标签池
     function saveHistoryTags() {
-      localStorage.setItem("cardSetHistoryTags", JSON.stringify(historyTags));
+      if (!currentUser) return;
+      localStorage.setItem(`cardSetHistoryTags_${currentUser.userId}`, JSON.stringify(historyTags));
     }
     // 添加到历史标签池
     function addToHistoryTags(tag) {
