@@ -14,8 +14,17 @@ const CLOUD_CONFIG = {
 
 // 初始化云开发
 function initCloud() {
-    if (typeof tcb !== 'undefined') {
-        // 如果已经加载了云开发SDK
+    // 优先使用 @cloudbase/js-sdk
+    if (typeof cloudbase !== 'undefined') {
+        console.log('使用 @cloudbase/js-sdk');
+        const app = cloudbase.init({
+            env: CLOUD_CONFIG.envId
+        });
+        return app;
+    }
+    // 降级使用 tcb SDK
+    else if (typeof tcb !== 'undefined') {
+        console.log('使用 tcb SDK');
         const app = tcb.init({
             env: CLOUD_CONFIG.envId
         });
@@ -35,7 +44,16 @@ function getDatabase() {
     return null;
 }
 
+// 获取数据模型实例（如果支持）
+function getModels() {
+    const app = initCloud();
+    if (app && app.models) {
+        return app.models;
+    }
+    return null;
+}
+
 // 导出配置
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { CLOUD_CONFIG, initCloud, getDatabase };
+    module.exports = { CLOUD_CONFIG, initCloud, getDatabase, getModels };
 } 

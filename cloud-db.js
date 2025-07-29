@@ -7,25 +7,35 @@ class CloudDatabase {
 
     // 检查云开发是否可用
     isAvailable() {
-        // 检查tcb SDK是否加载
-        if (typeof tcb === 'undefined') {
-            console.log('tcb SDK未加载');
+        // 检查新的 @cloudbase/js-sdk 是否加载
+        if (typeof cloudbase !== 'undefined') {
+            console.log('检测到 @cloudbase/js-sdk');
+            if (!this.db) {
+                console.log('数据库实例不可用');
+                return false;
+            }
+            if (!CLOUD_CONFIG || !CLOUD_CONFIG.envId || CLOUD_CONFIG.envId === 'your-env-id-here') {
+                console.log('环境ID未正确配置');
+                return false;
+            }
+            return true;
+        }
+        // 检查 tcb SDK 是否加载
+        else if (typeof tcb !== 'undefined') {
+            console.log('检测到 tcb SDK');
+            if (!this.db) {
+                console.log('数据库实例不可用');
+                return false;
+            }
+            if (!CLOUD_CONFIG || !CLOUD_CONFIG.envId || CLOUD_CONFIG.envId === 'your-env-id-here') {
+                console.log('环境ID未正确配置');
+                return false;
+            }
+            return true;
+        } else {
+            console.log('云开发SDK未加载');
             return false;
         }
-
-        // 检查数据库实例是否可用
-        if (!this.db) {
-            console.log('数据库实例不可用');
-            return false;
-        }
-
-        // 检查环境ID是否配置
-        if (!CLOUD_CONFIG || !CLOUD_CONFIG.envId || CLOUD_CONFIG.envId === 'your-env-id-here') {
-            console.log('环境ID未正确配置');
-            return false;
-        }
-
-        return true;
     }
 
     // ==================== 用户相关操作 ====================
@@ -104,11 +114,13 @@ class CloudDatabase {
                 await this.db.collection(this.collections.cardSets).add(cardSetData);
             }
 
-            console.log('卡组数据已保存到云数据库');
+            console.log('✅ 卡组数据已保存到云数据库');
         } catch (error) {
-            console.error('保存卡组数据失败:', error);
+            console.error('❌ 保存卡组数据到云数据库失败:', error);
             // 降级到本地存储
             localStorage.setItem(`history_${userId}`, JSON.stringify(cardSets));
+            console.log('✅ 卡组数据已保存到本地存储');
+            throw error; // 抛出异常，让调用方知道保存失败
         }
     }
 
@@ -120,7 +132,7 @@ class CloudDatabase {
                 .orderBy('createdAt', 'desc')
                 .get();
 
-            return result.data.map(item => ({
+            const cardSets = result.data.map(item => ({
                 id: item.cardSetId,
                 title: item.title,
                 tags: item.tags,
@@ -128,11 +140,12 @@ class CloudDatabase {
                 createdAt: item.createdAt,
                 updatedAt: item.updatedAt
             }));
+
+            console.log('卡组数据已从云数据库加载');
+            return cardSets;
         } catch (error) {
-            console.error('获取卡组数据失败:', error);
-            // 降级到本地存储
-            const userHistory = localStorage.getItem(`history_${userId}`);
-            return userHistory ? JSON.parse(userHistory) : [];
+            console.error('从云数据库获取卡组数据失败:', error);
+            throw error; // 抛出异常，让调用方处理降级
         }
     }
 
@@ -164,11 +177,13 @@ class CloudDatabase {
                 });
             }
 
-            console.log('历史标签已保存到云数据库');
+            console.log('✅ 历史标签已保存到云数据库');
         } catch (error) {
-            console.error('保存历史标签失败:', error);
+            console.error('❌ 保存历史标签到云数据库失败:', error);
             // 降级到本地存储
             localStorage.setItem(`cardSetHistoryTags_${userId}`, JSON.stringify(tags));
+            console.log('✅ 历史标签已保存到本地存储');
+            throw error; // 抛出异常，让调用方知道保存失败
         }
     }
 
@@ -179,12 +194,12 @@ class CloudDatabase {
                 .where({ userId })
                 .get();
 
-            return result.data.length > 0 ? result.data[0].tags : [];
+            const tags = result.data.length > 0 ? result.data[0].tags : [];
+            console.log('历史标签已从云数据库加载');
+            return tags;
         } catch (error) {
-            console.error('获取历史标签失败:', error);
-            // 降级到本地存储
-            const saved = localStorage.getItem(`cardSetHistoryTags_${userId}`);
-            return saved ? JSON.parse(saved) : [];
+            console.error('从云数据库获取历史标签失败:', error);
+            throw error; // 抛出异常，让调用方处理降级
         }
     }
 

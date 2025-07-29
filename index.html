@@ -6,6 +6,9 @@
   <title>学成选择题——配对卡片练习</title>
 
   <!-- 腾讯云云开发SDK -->
+  <!-- 优先使用新的 @cloudbase/js-sdk -->
+  <script src="https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@latest/dist/index.min.js"></script>
+  <!-- 降级使用 tcb-js-sdk -->
   <script src="https://cdn.jsdelivr.net/npm/tcb-js-sdk@latest/dist/tcb.min.js"></script>
   <script src="cloud-config.js"></script>
   <script src="cloud-db.js"></script>
@@ -37,7 +40,17 @@
     // 内联云开发初始化函数
     if (typeof initCloud === 'undefined') {
       window.initCloud = function () {
-        if (typeof tcb !== 'undefined') {
+        // 优先使用新的 @cloudbase/js-sdk
+        if (typeof cloudbase !== 'undefined') {
+          console.log('使用 @cloudbase/js-sdk');
+          const app = cloudbase.init({
+            env: CLOUD_CONFIG.envId
+          });
+          return app;
+        }
+        // 降级使用 tcb SDK
+        else if (typeof tcb !== 'undefined') {
+          console.log('使用 tcb SDK');
           const app = tcb.init({
             env: CLOUD_CONFIG.envId
           });
@@ -61,12 +74,18 @@
 
     // 在云托管环境中，可以直接使用云开发数据库
     // 不需要额外的认证，因为已经在云托管环境中
-    if (typeof tcb !== 'undefined') {
-      // 自动初始化云开发
+    if (typeof cloudbase !== 'undefined') {
+      // 优先使用新的 SDK
+      const app = cloudbase.init({
+        env: CLOUD_CONFIG.envId
+      });
+      console.log('云开发已初始化 (@cloudbase/js-sdk)');
+    } else if (typeof tcb !== 'undefined') {
+      // 降级使用 tcb SDK
       const app = tcb.init({
         env: CLOUD_CONFIG.envId
       });
-      console.log('云开发已初始化');
+      console.log('云开发已初始化 (tcb-js-sdk)');
     }
 
     // 云数据库降级机制
@@ -949,15 +968,21 @@
         renderHistory();
         renderHistoryTags();
 
-        console.log('数据已从云数据库加载');
+        console.log('✅ 数据已从云数据库加载');
       } catch (error) {
-        console.error('从云数据库加载数据失败，使用本地存储:', error);
+        console.error('❌ 从云数据库加载数据失败，使用本地存储:', error);
         // 降级到本地存储
         const userHistory = localStorage.getItem(`history_${currentUser.userId}`);
         if (userHistory) {
           history = JSON.parse(userHistory);
         }
+        const savedTags = localStorage.getItem(`cardSetHistoryTags_${currentUser.userId}`);
+        if (savedTags) {
+          historyTags = JSON.parse(savedTags);
+        }
         renderHistory();
+        renderHistoryTags();
+        console.log('✅ 数据已从本地存储加载');
       }
     }
 
@@ -970,12 +995,13 @@
         await cloudDB.saveCardSets(currentUser.userId, history);
         await cloudDB.saveHistoryTags(currentUser.userId, historyTags);
 
-        console.log('数据已保存到云数据库');
+        console.log('✅ 数据已保存到云数据库');
       } catch (error) {
-        console.error('保存到云数据库失败，使用本地存储:', error);
+        console.error('❌ 保存到云数据库失败，使用本地存储:', error);
         // 降级到本地存储
         localStorage.setItem(`history_${currentUser.userId}`, JSON.stringify(history));
         localStorage.setItem(`cardSetHistoryTags_${currentUser.userId}`, JSON.stringify(historyTags));
+        console.log('✅ 数据已保存到本地存储');
       }
     }
 
