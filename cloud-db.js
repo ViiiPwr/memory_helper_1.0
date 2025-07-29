@@ -10,7 +10,18 @@ class CloudDatabase {
     async getDatabase() {
         if (!this._db && !this._initialized) {
             this._initialized = true;
-            this._db = await getDatabase();
+            console.log('开始初始化数据库连接...');
+            try {
+                this._db = await getDatabase();
+                if (this._db) {
+                    console.log('✅ 数据库连接初始化成功');
+                } else {
+                    console.log('❌ 数据库连接初始化失败');
+                }
+            } catch (error) {
+                console.error('❌ 数据库连接初始化出错:', error);
+                this._db = null;
+            }
         }
         return this._db;
     }
@@ -152,6 +163,16 @@ class CloudDatabase {
     async saveCardSets(userId, cardSets) {
         console.log('开始保存卡组数据到云端...', { userId, cardSetsCount: cardSets.length });
 
+        // 首先检查云开发是否可用
+        const isAvailable = await this.isAvailable();
+        if (!isAvailable) {
+            console.log('❌ 云开发不可用，使用本地存储');
+            // 降级到本地存储
+            localStorage.setItem(`history_${userId}`, JSON.stringify(cardSets));
+            console.log('✅ 卡组数据已保存到本地存储');
+            return;
+        }
+
         try {
             // 检查数据库连接
             const db = await this.getDatabase();
@@ -244,6 +265,18 @@ class CloudDatabase {
 
     // 保存历史标签
     async saveHistoryTags(userId, tags) {
+        console.log('开始保存历史标签到云端...', { userId, tagsCount: tags.length });
+
+        // 首先检查云开发是否可用
+        const isAvailable = await this.isAvailable();
+        if (!isAvailable) {
+            console.log('❌ 云开发不可用，使用本地存储');
+            // 降级到本地存储
+            localStorage.setItem(`cardSetHistoryTags_${userId}`, JSON.stringify(tags));
+            console.log('✅ 历史标签已保存到本地存储');
+            return;
+        }
+
         try {
             const db = await this.getDatabase();
             if (!db) {
