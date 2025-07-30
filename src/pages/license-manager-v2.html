@@ -284,14 +284,25 @@
             <div id="distributeResult"></div>
         </div>
 
-        <!-- 标记使用 -->
+        <!-- 授权码状态管理 -->
         <div class="section">
-            <h2>✅ 标记授权码使用</h2>
+            <h2>✅ 授权码状态管理</h2>
+            <div class="alert alert-warning">
+                <strong>📝 说明：</strong><br>
+                • <strong>退出登录</strong>：用户退出后授权码仍可重新登录<br>
+                • <strong>停用授权码</strong>：永久停用授权码，无法再次使用<br>
+                • <strong>标记使用</strong>：标记授权码已被使用（通常用于停用）
+            </div>
             <div class="input-group">
                 <label for="markUsedInput">授权码：</label>
                 <input type="text" id="markUsedInput" placeholder="输入要标记为已使用的授权码" />
             </div>
             <button class="btn btn-warning" onclick="markAsUsed()">标记为已使用</button>
+            <div class="input-group" style="margin-top: 1rem;">
+                <label for="deactivateInput">停用授权码：</label>
+                <input type="text" id="deactivateInput" placeholder="输入要停用的授权码" />
+            </div>
+            <button class="btn btn-danger" onclick="deactivateLicense()">停用授权码</button>
             <div id="markUsedResult"></div>
         </div>
 
@@ -502,6 +513,42 @@
                         <strong>❌ ${result.message}</strong>
                     </div>
                 `;
+            }
+        }
+
+        // 停用授权码
+        function deactivateLicense() {
+            const licenseCode = document.getElementById('deactivateInput').value.trim();
+            
+            if (!licenseCode) {
+                alert('请输入授权码');
+                return;
+            }
+
+            if (confirm(`确定要停用授权码 ${licenseCode} 吗？停用后该授权码将无法再次使用。`)) {
+                const result = licenseManagerV2.markAsUsed(licenseCode);
+                
+                if (result.success) {
+                    document.getElementById('markUsedResult').innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✅ 授权码已停用</strong><br>
+                            授权码: ${result.licenseInfo.code}<br>
+                            停用时间: ${new Date().toLocaleString()}<br>
+                            <small>该授权码将无法再次使用</small>
+                        </div>
+                    `;
+                    
+                    document.getElementById('deactivateInput').value = '';
+                    refreshStats();
+                    refreshUsedLicenses();
+                } else {
+                    document.getElementById('markUsedResult').innerHTML = `
+                        <div class="alert alert-error">
+                            <strong>❌ 停用失败</strong><br>
+                            错误: ${result.message}
+                        </div>
+                    `;
+                }
             }
         }
 

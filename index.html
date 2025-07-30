@@ -1005,14 +1005,9 @@
           history = [];
           historyTags = [];
 
-          // 标记授权码为已使用（如果用户已登录）
+          // 退出登录时不标记授权码为已使用，允许用户重新登录
           if (userAuthCode) {
-            try {
-              licenseManagerV2.markAsUsed(userAuthCode);
-              console.log('授权码已标记为使用:', userAuthCode);
-            } catch (error) {
-              console.error('标记授权码使用失败:', error);
-            }
+            console.log('用户退出登录，授权码保持可用状态:', userAuthCode);
           }
 
           // 渲染空界面
