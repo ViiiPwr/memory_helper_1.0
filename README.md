@@ -26,6 +26,7 @@
 ├── scripts/               # 脚本目录
 │   ├── quick-start.sh         # 快速启动脚本
 │   ├── build-mac.sh           # macOS构建脚本
+│   ├── build-windows.sh       # Windows构建脚本
 │   ├── build-app.sh           # 通用构建脚本
 │   ├── update.sh              # 更新脚本
 │   └── fast-install.sh        # 快速安装脚本
@@ -53,6 +54,9 @@ npm start
 ```bash
 # macOS
 ./scripts/build-mac.sh
+
+# Windows
+./scripts/build-windows.sh
 
 # 通用构建
 ./scripts/build-app.sh
@@ -118,6 +122,8 @@ npm run build
 # 平台特定构建
 npm run build:mac
 npm run build:win
+npm run build:win:nsis    # Windows安装包
+npm run build:win:portable # Windows便携版
 npm run build:linux
 ```
 

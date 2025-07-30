@@ -10,6 +10,9 @@
     "build:mac:x64": "electron-builder --mac --x64",
     "build:mac:arm64": "electron-builder --mac --arm64",
     "build:win": "electron-builder --win",
+    "build:win:x64": "electron-builder --win --x64",
+    "build:win:nsis": "electron-builder --win --x64 --target nsis",
+    "build:win:portable": "electron-builder --win --x64 --target portable",
     "build:linux": "electron-builder --linux"
   },
   "keywords": [
