@@ -1713,121 +1713,365 @@
 
     // 编辑卡组功能
     function editCard(entry, index) {
-      // 填充表单
-      document.getElementById("cardSetTitle").value = entry.title || "";
-      currentTags = entry.tags ? [...entry.tags] : [];
-      renderTags();
-      renderHistoryTags();
+      // 创建编辑弹窗
+      const editModal = document.createElement('div');
+      editModal.className = 'modal';
+      editModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      `;
 
-      // 清空现有分组
-      const container = document.getElementById("groupContainer");
-      container.innerHTML = "";
-
-      // 重新创建分组
-      Object.keys(entry.correctAnswers).forEach((groupName, groupIndex) => {
-        const groupDiv = document.createElement("div");
-        groupDiv.className = "group-input";
-        groupDiv.style.display = "flex";
-        groupDiv.style.gap = "10px";
-        groupDiv.style.alignItems = "flex-start";
-        groupDiv.innerHTML = `
-          <div style="flex:1;">
-            <input type="text" placeholder="分组名称" class="group-name" style="width:100%;margin-bottom:6px;" value="${groupName}" />
-            <textarea placeholder="条目列表 (用逗号或换行分隔)" class="group-items" style="width:100%;height:60px;">${entry.correctAnswers[groupName].join(", ")}</textarea>
+      editModal.innerHTML = `
+        <div class="modal-content" style="
+          background: white;
+          padding: 30px;
+          border-radius: 10px;
+          width: 80%;
+          max-width: 800px;
+          max-height: 90vh;
+          overflow-y: auto;
+          position: relative;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        ">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #333; font-size: 24px;">编辑卡组</h2>
+            <button id="closeEditModal" style="
+              background: none;
+              border: none;
+              font-size: 24px;
+              cursor: pointer;
+              color: #666;
+              padding: 0;
+              width: 30px;
+              height: 30px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">&times;</button>
           </div>
-          <button class="remove-group" style="background:#e57373;">删除</button>
-        `;
-        groupDiv.querySelector(".remove-group").onclick = function () {
-          groupDiv.remove();
-        };
-        container.appendChild(groupDiv);
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">卡组名称：</label>
+            <input type="text" id="editCardTitle" value="${entry.title || ''}" style="
+              width: 100%;
+              padding: 12px;
+              border: 1px solid #ddd;
+              border-radius: 6px;
+              font-size: 16px;
+              box-sizing: border-box;
+            " placeholder="请输入卡组名称">
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: bold; color: #333;">标签：</label>
+            <div id="editTagsContainer" style="margin-bottom: 10px; min-height: 30px;"></div>
+            <div style="display: flex; gap: 10px;">
+              <input type="text" id="editTagInput" placeholder="输入标签" style="
+                flex: 1;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                font-size: 14px;
+                box-sizing: border-box;
+              ">
+              <button id="addEditTag" style="
+                padding: 8px 16px;
+                background: #007bff;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background-color 0.2s;
+              " onmouseover="this.style.backgroundColor='#0056b3'" onmouseout="this.style.backgroundColor='#007bff'">添加标签</button>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 10px; font-weight: bold; color: #333;">分组内容：</label>
+            <div id="editGroupContainer"></div>
+            <button id="addEditGroup" style="
+              margin-top: 10px;
+              padding: 8px 16px;
+              background: #28a745;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 14px;
+              transition: background-color 0.2s;
+            " onmouseover="this.style.backgroundColor='#1e7e34'" onmouseout="this.style.backgroundColor='#28a745'">添加分组</button>
+          </div>
+          
+          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 30px;">
+            <button id="cancelEdit" style="
+              padding: 12px 24px;
+              background: #6c757d;
+              color: white;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 14px;
+              font-weight: 500;
+              transition: background-color 0.2s;
+            " onmouseover="this.style.backgroundColor='#545b62'" onmouseout="this.style.backgroundColor='#6c757d'">取消</button>
+            <button id="saveEdit" style="
+              padding: 12px 24px;
+              background: #007bff;
+              color: white;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 14px;
+              font-weight: 500;
+              transition: background-color 0.2s;
+            " onmouseover="this.style.backgroundColor='#0056b3'" onmouseout="this.style.backgroundColor='#007bff'">保存修改</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(editModal);
+
+      // 初始化编辑数据
+      let editTags = entry.tags ? [...entry.tags] : [];
+      let editGroups = {};
+
+      // 根据卡组数据重新创建分组
+      entry.factors.forEach((factor) => {
+        if (!editGroups[factor.group]) {
+          editGroups[factor.group] = [];
+        }
+        editGroups[factor.group].push(factor.text);
       });
 
-      // 修改生成按钮行为为更新
-      const generateBtn = document.getElementById("generate");
-      generateBtn.textContent = "更新卡组";
-      generateBtn.onclick = function () {
-        updateCard(index);
-      };
-
-      // 滚动到顶部
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // 更新卡组
-    function updateCard(index) {
-      // 验证题目名称
-      const titleInput = document.getElementById("cardSetTitle");
-      const titleTip = document.getElementById("titleRequiredTip");
-      if (!titleInput.value.trim()) {
-        titleTip.style.display = "inline";
-        titleInput.focus();
-        showToast("请输入题目名称", "error");
-        return;
-      } else {
-        titleTip.style.display = "none";
+      // 渲染标签
+      function renderEditTags() {
+        const container = document.getElementById('editTagsContainer');
+        container.innerHTML = editTags.map(tag => `
+          <span style="
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin: 2px;
+          ">
+            ${tag}
+            <span onclick="removeEditTag('${tag}')" style="cursor: pointer; margin-left: 4px; color: #1976d2; font-weight: bold; opacity: 0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">×</span>
+          </span>
+        `).join('');
       }
 
-      // 验证分组数量
-      const groupNames = document.querySelectorAll(".group-name");
-      const groupItems = document.querySelectorAll(".group-items");
-      const validGroups = [];
+      // 渲染分组
+      function renderEditGroups() {
+        const container = document.getElementById('editGroupContainer');
+        container.innerHTML = Object.keys(editGroups).map(groupName => `
+          <div style="
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+          ">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <input type="text" class="edit-group-name" value="${groupName}" placeholder="分组名称" style="
+                flex: 1;
+                padding: 12px;
+                border: 1px solid #ddd;
+                border-radius: 6px;
+                margin-right: 15px;
+                font-size: 14px;
+                box-sizing: border-box;
+              ">
+              <button onclick="removeEditGroup('${groupName}')" style="
+                padding: 8px 16px;
+                background: #dc3545;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background-color 0.2s;
+              " onmouseover="this.style.backgroundColor='#c82333'" onmouseout="this.style.backgroundColor='#dc3545'">删除分组</button>
+            </div>
+            <textarea class="edit-group-items" placeholder="请输入该分组的项目，每行一个或逗号分隔" style="
+              width: 100%;
+              min-height: 100px;
+              padding: 12px;
+              border: 1px solid #ddd;
+              border-radius: 6px;
+              resize: vertical;
+              font-size: 14px;
+              line-height: 1.5;
+              box-sizing: border-box;
+            ">${editGroups[groupName].join('\n')}</textarea>
+          </div>
+        `).join('');
+      }
 
-      groupNames.forEach((nameInput, groupIndex) => {
-        const groupName = nameInput.value.trim();
-        if (!groupName) return;
+      // 添加标签
+      window.addEditTag = function () {
+        const input = document.getElementById('editTagInput');
+        const tag = input.value.trim();
+        if (tag && !editTags.includes(tag)) {
+          editTags.push(tag);
+          renderEditTags();
+          input.value = '';
+        }
+      };
 
-        const items = groupItems[groupIndex].value
-          .split(/[\n,]+/)
-          .map((s) => s.trim())
-          .filter((s) => s);
+      // 删除标签
+      window.removeEditTag = function (tag) {
+        editTags = editTags.filter(t => t !== tag);
+        renderEditTags();
+      };
 
-        if (items.length === 0) {
-          showToast(`分组"${groupName}"至少需要1个条目`, "error");
-          groupItems[groupIndex].focus();
+      // 添加分组
+      window.addEditGroup = function () {
+        const groupName = `分组${Object.keys(editGroups).length + 1}`;
+        editGroups[groupName] = [];
+        renderEditGroups();
+      };
+
+      // 删除分组
+      window.removeEditGroup = function (groupName) {
+        delete editGroups[groupName];
+        renderEditGroups();
+      };
+
+      // 保存修改
+      window.saveEditChanges = function () {
+        const title = document.getElementById('editCardTitle').value.trim();
+        if (!title) {
+          showToast('请输入卡组名称', 'error');
           return;
         }
 
-        validGroups.push({ name: groupName, items: items });
-      });
+        // 收集分组数据
+        const groupElements = document.querySelectorAll('#editGroupContainer > div');
+        const newGroups = {};
 
-      if (validGroups.length < 2) {
-        showToast("至少需要2个分组", "error");
-        return;
-      }
+        groupElements.forEach(element => {
+          const nameInput = element.querySelector('.edit-group-name');
+          const itemsTextarea = element.querySelector('.edit-group-items');
 
-      const newFactors = [];
-      const newCorrectAnswers = {};
+          if (nameInput && itemsTextarea) {
+            const groupName = nameInput.value.trim();
+            if (groupName) {
+              const items = itemsTextarea.value
+                .split(/[\n,]+/)
+                .map(s => s.trim())
+                .filter(s => s);
 
-      validGroups.forEach((group) => {
-        group.items.forEach((item) => {
-          newFactors.push({ text: item, group: group.name, correct: false });
+              if (items.length > 0) {
+                newGroups[groupName] = items;
+              }
+            }
+          }
         });
-        newCorrectAnswers[group.name] = group.items;
-      });
 
-      const cardSetTitle = titleInput.value.trim();
+        if (Object.keys(newGroups).length < 2) {
+          showToast('至少需要2个分组', 'error');
+          return;
+        }
 
-      // 更新历史记录
-      history[index] = {
-        title: cardSetTitle,
-        tags: [...currentTags],
-        factors: JSON.parse(JSON.stringify(newFactors)),
-        correctAnswers: JSON.parse(JSON.stringify(newCorrectAnswers)),
-        createdAt: history[index].createdAt,
-        updatedAt: new Date().toISOString()
+        // 检查卡组名称是否重复（排除当前编辑的卡组）
+        const existingCard = history.find((card, i) => i !== index && card.title === title);
+        if (existingCard) {
+          showToast(`卡组名称"${title}"已存在，请使用其他名称`, 'error');
+          return;
+        }
+
+        // 检查项目名称是否有重复
+        const allItems = [];
+        const duplicateItems = [];
+
+        Object.values(newGroups).forEach(items => {
+          items.forEach(item => {
+            if (allItems.includes(item)) {
+              duplicateItems.push(item);
+            } else {
+              allItems.push(item);
+            }
+          });
+        });
+
+        if (duplicateItems.length > 0) {
+          const uniqueDuplicates = [...new Set(duplicateItems)];
+          showToast(`修改失败：项目名称"${uniqueDuplicates.join('、')}"重复，请重新编辑`, 'error');
+          return;
+        }
+
+        // 更新历史记录
+        const newFactors = [];
+        const newCorrectAnswers = {};
+
+        Object.keys(newGroups).forEach(groupName => {
+          newGroups[groupName].forEach(item => {
+            newFactors.push({ text: item, group: groupName, correct: false });
+          });
+          newCorrectAnswers[groupName] = newGroups[groupName];
+        });
+
+        history[index] = {
+          title: title,
+          tags: editTags,
+          factors: JSON.parse(JSON.stringify(newFactors)),
+          correctAnswers: JSON.parse(JSON.stringify(newCorrectAnswers)),
+          createdAt: history[index].createdAt,
+          updatedAt: new Date().toISOString()
+        };
+
+        (async function () {
+          await saveHistory();
+          renderHistory();
+        })();
+
+        showToast('卡组更新成功！', 'success');
+        closeEditModal();
       };
 
-      (async function () {
-        await saveHistory();
-        renderHistory();
-      })();
+      // 关闭弹窗
+      function closeEditModal() {
+        document.body.removeChild(editModal);
+        // 清理全局函数
+        delete window.addEditTag;
+        delete window.removeEditTag;
+        delete window.addEditGroup;
+        delete window.removeEditGroup;
+        delete window.saveEditChanges;
+      }
 
-      // 重置表单和按钮
-      resetForm();
+      // 绑定事件
+      document.getElementById('closeEditModal').onclick = closeEditModal;
+      document.getElementById('cancelEdit').onclick = closeEditModal;
+      document.getElementById('addEditTag').onclick = window.addEditTag;
+      document.getElementById('addEditGroup').onclick = window.addEditGroup;
+      document.getElementById('saveEdit').onclick = window.saveEditChanges;
 
-      showToast("卡组更新成功！", "success");
+      // 标签输入框回车事件
+      document.getElementById('editTagInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+          window.addEditTag();
+        }
+      });
+
+      // 初始化渲染
+      renderEditTags();
+      renderEditGroups();
     }
+
+
 
     // 删除卡组
     function deleteCard(index) {
