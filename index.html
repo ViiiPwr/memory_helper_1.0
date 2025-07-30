@@ -988,7 +988,7 @@
 
       try {
         await cloudDB.migrateFromLocalStorage(currentUser.userId);
-        showToast('旧格式数据迁移完成', 'success');
+        // 移除成功提示，静默完成迁移
       } catch (error) {
         console.error('数据迁移失败:', error);
         showToast('数据迁移失败，请稍后重试', 'error');
