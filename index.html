@@ -784,7 +784,6 @@
       <div style="display: flex; gap: 10px; align-items: center;">
         <button id="exportDataBtn" style="background: #27ae60;">导出数据</button>
         <button id="importDataBtn" style="background: #3498db;">导入数据</button>
-        <input type="file" id="importFileInput" accept=".json" style="display: none;" />
       </div>
       <div id="dataManagementResult" style="margin-top: 10px;"></div>
     </div>
@@ -1183,7 +1182,7 @@
         // 检查所有分组内的项目名称是否有重复
         const allItems = [];
         const duplicateItems = [];
-        
+
         validGroups.forEach((group) => {
           group.items.forEach((item) => {
             if (allItems.includes(item)) {
@@ -2120,6 +2119,102 @@
       };
     }
 
+    // 数据导出导入函数
+    async function exportAllData() {
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        user: currentUser,
+        history: history,
+        historyTags: historyTags,
+        version: "1.0"
+      };
+
+      try {
+        const filename = `配对题数据_${new Date().toISOString().slice(0, 10)}.json`;
+        const result = await window.electronAPI.exportFile(exportData, filename);
+
+        if (result.success) {
+          showToast('数据导出成功', 'success');
+        } else {
+          showToast(result.message, 'error');
+        }
+      } catch (error) {
+        console.error('导出失败:', error);
+        showToast('导出失败，请稍后重试', 'error');
+      }
+    }
+
+    async function importData() {
+      try {
+        const result = await window.electronAPI.importFile();
+
+        if (result.success) {
+          const importData = result.data;
+
+          if (!importData.history || !Array.isArray(importData.history)) {
+            showToast('导入文件格式错误', 'error');
+            return;
+          }
+
+          // 确认导入
+          const confirmResult = await window.electronAPI.showConfirmDialog({
+            title: '确认导入',
+            message: `确定要导入 ${importData.history.length} 个卡组吗？这将覆盖当前数据。`,
+            detail: '导入后将覆盖当前所有数据，请确保已备份重要数据。'
+          });
+
+          if (confirmResult.confirmed) {
+            history = importData.history;
+            if (importData.historyTags) {
+              historyTags = importData.historyTags;
+            }
+
+            (async function () {
+              await saveHistory();
+              await saveHistoryTags();
+              renderHistory();
+              showToast(`成功导入 ${history.length} 个卡组`, 'success');
+            })();
+          } else {
+            showToast('导入已取消', 'info');
+          }
+        } else {
+          showToast(result.message, 'error');
+        }
+      } catch (error) {
+        console.error('导入失败:', error);
+        showToast('导入失败，请稍后重试', 'error');
+      }
+    }
+
+    // 数据管理事件绑定
+    console.log('=== 绑定事件监听器 ===');
+    const exportBtn = document.getElementById('exportDataBtn');
+    const importBtn = document.getElementById('importDataBtn');
+
+    console.log('exportBtn:', exportBtn);
+    console.log('importBtn:', importBtn);
+
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        console.log('导出按钮被点击');
+        exportAllData();
+      });
+      console.log('✅ 导出按钮事件绑定成功');
+    } else {
+      console.log('❌ 导出按钮未找到');
+    }
+
+    if (importBtn) {
+      importBtn.addEventListener('click', () => {
+        console.log('导入按钮被点击');
+        importData();
+      });
+      console.log('✅ 导入按钮事件绑定成功');
+    } else {
+      console.log('❌ 导入按钮未找到');
+    }
+
     // 重置表单
     function resetForm() {
       clearAllInputs();
@@ -2129,76 +2224,10 @@
         this.parentElement.remove();
       };
 
-          // 数据导出导入函数
-    function exportAllData() {
-      const exportData = {
-        exportedAt: new Date().toISOString(),
-        user: currentUser,
-        history: history,
-        historyTags: historyTags,
-        version: "1.0"
-      };
-
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `配对题数据_${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      showToast('数据导出成功', 'success');
-    }
-
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const importData = JSON.parse(e.target.result);
-          
-          if (!importData.history || !Array.isArray(importData.history)) {
-            showToast('导入文件格式错误', 'error');
-            return;
-          }
-
-          // 确认导入
-          showConfirm(`确定要导入 ${importData.history.length} 个卡组吗？这将覆盖当前数据。`, () => {
-            history = importData.history;
-            if (importData.historyTags) {
-              historyTags = importData.historyTags;
-            }
-            
-            (async function() {
-              await saveHistory();
-              await saveHistoryTags();
-              renderHistory();
-              showToast(`成功导入 ${history.length} 个卡组`, 'success');
-            })();
-          }, () => {
-            showToast('导入已取消', 'info');
-          });
-
-        } catch (error) {
-          console.error('导入数据失败:', error);
-          showToast('导入文件格式错误', 'error');
-        }
-      };
-      reader.readAsText(file);
-      
-      // 清空文件输入框
-      event.target.value = '';
-    }
-
-    // 重置生成按钮
-    const generateBtn = document.getElementById("generate");
-    generateBtn.textContent = "生成配对题";
-    generateBtn.onclick = function () {
+      // 重置生成按钮
+      const generateBtn = document.getElementById("generate");
+      generateBtn.textContent = "生成配对题";
+      generateBtn.onclick = function () {
         // 恢复原来的生成逻辑
         // 验证题目名称
         const titleInput = document.getElementById("cardSetTitle");
@@ -2248,7 +2277,7 @@
         // 检查所有分组内的项目名称是否有重复
         const allItems = [];
         const duplicateItems = [];
-        
+
         validGroups.forEach((group) => {
           group.items.forEach((item) => {
             if (allItems.includes(item)) {
@@ -2332,12 +2361,34 @@
     // 退出登录按钮事件
     document.getElementById('logoutBtn').addEventListener('click', logout);
 
-    // 数据管理事件
-    document.getElementById('exportDataBtn').addEventListener('click', exportAllData);
-    document.getElementById('importDataBtn').addEventListener('click', () => {
-      document.getElementById('importFileInput').click();
+
+
+    // 调试：检查Electron API是否可用
+    console.log('=== Electron API 检查 ===');
+    console.log('window.electronAPI:', typeof window.electronAPI !== 'undefined' ? '✅ 可用' : '❌ 不可用');
+    if (typeof window.electronAPI !== 'undefined') {
+      console.log('electronAPI方法:', Object.keys(window.electronAPI));
+    }
+
+    // 将函数暴露到全局作用域以便调试
+    window.testExport = exportAllData;
+    window.testImport = importData;
+    console.log('✅ 测试函数已暴露到全局作用域');
+    console.log('可以在控制台运行: testExport() 或 testImport() 来测试');
+
+    // 添加错误处理
+    window.addEventListener('error', function (e) {
+      console.error('JavaScript错误:', e.error);
+      console.error('错误文件:', e.filename);
+      console.error('错误行号:', e.lineno);
+      console.error('错误列号:', e.colno);
     });
-    document.getElementById('importFileInput').addEventListener('change', importData);
+
+    // 检查函数是否正确定义
+    console.log('=== 函数定义检查 ===');
+    console.log('exportAllData:', typeof exportAllData);
+    console.log('importData:', typeof importData);
+    console.log('showToast:', typeof showToast);
 
     // 授权码管理按钮事件（仅开发者模式）
     // document.getElementById('licenseBtn').addEventListener('click', function () {

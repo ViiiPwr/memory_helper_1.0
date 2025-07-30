@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Electron API 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .success {
+            background: #27ae60;
+        }
+
+        .error {
+            background: #e74c3c;
+        }
+
+        .info {
+            background: #95a5a6;
+        }
+
+        #log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Electron API 测试</h1>
+
+        <div>
+            <button onclick="checkElectronAPI()">检查 Electron API</button>
+            <button onclick="testExport()" class="success">测试导出</button>
+            <button onclick="testImport()" class="info">测试导入</button>
+            <button onclick="testMessageBox()" class="error">测试消息框</button>
+        </div>
+
+        <div id="log"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function checkElectronAPI() {
+            log('=== 检查 Electron API ===');
+            log(`window.electronAPI: ${typeof window.electronAPI !== 'undefined' ? '✅ 可用' : '❌ 不可用'}`);
+
+            if (typeof window.electronAPI !== 'undefined') {
+                const methods = Object.keys(window.electronAPI);
+                log(`可用的方法: ${methods.join(', ')}`);
+
+                methods.forEach(method => {
+                    log(`  ${method}: ${typeof window.electronAPI[method]}`);
+                });
+            } else {
+                log('⚠️ 在浏览器环境中，Electron API 不可用');
+                log('请通过 Electron 应用启动此页面');
+            }
+        }
+
+        async function testExport() {
+            log('=== 测试导出功能 ===');
+
+            if (typeof window.electronAPI === 'undefined') {
+                log('❌ Electron API 不可用');
+                return;
+            }
+
+            try {
+                const testData = {
+                    test: true,
+                    timestamp: new Date().toISOString(),
+                    message: '这是一个测试导出'
+                };
+
+                log('正在调用 exportFile...');
+                const result = await window.electronAPI.exportFile(testData, 'test-export.json');
+                log(`导出结果: ${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                log(`❌ 导出失败: ${error.message}`);
+            }
+        }
+
+        async function testImport() {
+            log('=== 测试导入功能 ===');
+
+            if (typeof window.electronAPI === 'undefined') {
+                log('❌ Electron API 不可用');
+                return;
+            }
+
+            try {
+                log('正在调用 importFile...');
+                const result = await window.electronAPI.importFile();
+                log(`导入结果: ${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                log(`❌ 导入失败: ${error.message}`);
+            }
+        }
+
+        async function testMessageBox() {
+            log('=== 测试消息框 ===');
+
+            if (typeof window.electronAPI === 'undefined') {
+                log('❌ Electron API 不可用');
+                return;
+            }
+
+            try {
+                log('正在调用 showMessageBox...');
+                const result = await window.electronAPI.showMessageBox({
+                    type: 'info',
+                    title: '测试消息框',
+                    message: '这是一个测试消息框',
+                    detail: '如果您看到这个消息框，说明 Electron API 工作正常！'
+                });
+                log(`消息框结果: ${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                log(`❌ 消息框失败: ${error.message}`);
+            }
+        }
+
+        // 页面加载时自动检查
+        window.addEventListener('load', () => {
+            log('页面加载完成');
+            checkElectronAPI();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,5 +1,6 @@
-const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 // 保持对窗口对象的全局引用，如果不这么做的话，当JavaScript对象被
 // 垃圾回收的时候，窗口会被自动地关闭
@@ -16,7 +17,8 @@ function createWindow() {
             nodeIntegration: false,
             contextIsolation: true,
             enableRemoteModule: false,
-            webSecurity: true
+            webSecurity: true,
+            preload: path.join(__dirname, 'preload.js')
         },
         icon: path.join(__dirname, 'assets/icon.png'),
         title: '配对题生成器',
@@ -190,4 +192,79 @@ app.on('window-all-closed', () => {
 // 也可以拆分成几个文件，然后用 require 导入。
 
 // 处理安全警告
-process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'; 
+process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+
+// IPC处理器 - 文件操作
+ipcMain.handle('export-file', async (event, data, filename) => {
+    try {
+        const result = await dialog.showSaveDialog(mainWindow, {
+            title: '导出数据',
+            defaultPath: filename || '配对题数据.json',
+            filters: [
+                { name: 'JSON文件', extensions: ['json'] },
+                { name: '所有文件', extensions: ['*'] }
+            ]
+        });
+
+        if (!result.canceled && result.filePath) {
+            fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2), 'utf8');
+            return { success: true, message: '文件导出成功' };
+        } else {
+            return { success: false, message: '用户取消了导出' };
+        }
+    } catch (error) {
+        console.error('导出文件失败:', error);
+        return { success: false, message: '导出文件失败: ' + error.message };
+    }
+});
+
+ipcMain.handle('import-file', async (event) => {
+    try {
+        const result = await dialog.showOpenDialog(mainWindow, {
+            title: '导入数据',
+            properties: ['openFile'],
+            filters: [
+                { name: 'JSON文件', extensions: ['json'] },
+                { name: '所有文件', extensions: ['*'] }
+            ]
+        });
+
+        if (!result.canceled && result.filePaths.length > 0) {
+            const filePath = result.filePaths[0];
+            const fileContent = fs.readFileSync(filePath, 'utf8');
+            const data = JSON.parse(fileContent);
+            return { success: true, data: data, message: '文件导入成功' };
+        } else {
+            return { success: false, message: '用户取消了导入' };
+        }
+    } catch (error) {
+        console.error('导入文件失败:', error);
+        return { success: false, message: '导入文件失败: ' + error.message };
+    }
+});
+
+ipcMain.handle('show-message-box', async (event, options) => {
+    try {
+        const result = await dialog.showMessageBox(mainWindow, options);
+        return result;
+    } catch (error) {
+        console.error('显示消息框失败:', error);
+        return { response: 0 };
+    }
+});
+
+ipcMain.handle('show-confirm-dialog', async (event, options) => {
+    try {
+        const result = await dialog.showMessageBox(mainWindow, {
+            type: 'question',
+            buttons: ['确定', '取消'],
+            defaultId: 0,
+            cancelId: 1,
+            ...options
+        });
+        return { confirmed: result.response === 0 };
+    } catch (error) {
+        console.error('显示确认对话框失败:', error);
+        return { confirmed: false };
+    }
+}); 

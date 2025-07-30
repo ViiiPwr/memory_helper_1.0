@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>学成选择题——配对卡片练习</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .success {
+            background: #27ae60;
+        }
+
+        .error {
+            background: #e74c3c;
+        }
+
+        #log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>配对题生成器 - 简化版</h1>
+
+    <div>
+        <button onclick="testExport()" class="success">导出数据</button>
+        <button onclick="testImport()" class="error">导入数据</button>
+        <button onclick="checkAPI()">检查API</button>
+        <button onclick="clearLog()">清空日志</button>
+    </div>
+
+    <div id="log"></div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        function checkAPI() {
+            log('=== 检查 Electron API ===');
+            log(`window.electronAPI: ${typeof window.electronAPI !== 'undefined' ? '✅ 可用' : '❌ 不可用'}`);
+
+            if (typeof window.electronAPI !== 'undefined') {
+                const methods = Object.keys(window.electronAPI);
+                log(`可用的方法: ${methods.join(', ')}`);
+
+                methods.forEach(method => {
+                    log(`  ${method}: ${typeof window.electronAPI[method]}`);
+                });
+            } else {
+                log('⚠️ Electron API 不可用');
+            }
+        }
+
+        async function testExport() {
+            log('=== 测试导出功能 ===');
+
+            if (typeof window.electronAPI === 'undefined') {
+                log('❌ Electron API 不可用');
+                return;
+            }
+
+            try {
+                const testData = {
+                    exportedAt: new Date().toISOString(),
+                    user: 'test-user',
+                    history: [
+                        {
+                            title: '测试卡组',
+                            factors: ['测试项目1', '测试项目2'],
+                            correctAnswers: { '测试分组': ['测试项目1', '测试项目2'] }
+                        }
+                    ],
+                    historyTags: ['测试'],
+                    version: "1.0"
+                };
+
+                log('正在调用 exportFile...');
+                const result = await window.electronAPI.exportFile(testData, 'test-export.json');
+                log(`导出结果: ${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                log(`❌ 导出失败: ${error.message}`);
+                log(`错误堆栈: ${error.stack}`);
+            }
+        }
+
+        async function testImport() {
+            log('=== 测试导入功能 ===');
+
+            if (typeof window.electronAPI === 'undefined') {
+                log('❌ Electron API 不可用');
+                return;
+            }
+
+            try {
+                log('正在调用 importFile...');
+                const result = await window.electronAPI.importFile();
+                log(`导入结果: ${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                log(`❌ 导入失败: ${error.message}`);
+                log(`错误堆栈: ${error.stack}`);
+            }
+        }
+
+        // 页面加载时自动检查
+        window.addEventListener('load', () => {
+            log('页面加载完成');
+            checkAPI();
+        });
+
+        // 暴露测试函数到全局
+        window.simpleTest = {
+            testExport,
+            testImport,
+            checkAPI
+        };
+    </script>
+</body>
+
+</html>
