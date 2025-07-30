@@ -783,6 +783,9 @@
     // 用户数据管理
     // 初始化用户系统
     async function initUserSystem() {
+      // 加载授权码分发记录
+      licenseManager.loadDistributedLicenses();
+      
       // 检查是否已登录
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
@@ -846,6 +849,9 @@
         showToast('请输入授权码', 'error');
         return false;
       }
+
+      // 重新加载分发记录，确保新分发的授权码能被识别
+      licenseManager.loadDistributedLicenses();
 
       // 使用授权码管理器验证
       const validationResult = licenseManager.validateLicense(code.trim());
@@ -998,6 +1004,9 @@
           correctAnswers = {};
           history = [];
           historyTags = [];
+
+          // 重新加载授权码，确保新分发的授权码可用
+          licenseManager.loadDistributedLicenses();
 
           // 渲染空界面
           renderHistory();

@@ -213,11 +213,11 @@
     <script>
         let currentGeneratedLicense = '';
 
-                // 步骤1：生成新授权码
+        // 步骤1：生成新授权码
         function generateNewLicense() {
             const license = licenseManager.generateLicense('premium');
             currentGeneratedLicense = license;
-            
+
             document.getElementById('newLicenseResult').innerHTML = `
                 <div class="result">
                     <h4>✅ 高级版授权码生成成功</h4>
@@ -227,12 +227,12 @@
                     <p>状态：待分发</p>
                 </div>
             `;
-            
+
             document.getElementById('step1').classList.add('completed');
             document.getElementById('step2').classList.add('active');
         }
 
-                // 步骤2：分发授权码
+        // 步骤2：分发授权码
         function distributeLicense() {
             if (!currentGeneratedLicense) {
                 alert('请先生成授权码');
@@ -248,7 +248,7 @@
             if (success) {
                 // 重新加载授权码管理器，确保新分发的授权码被识别
                 licenseManager.loadDistributedLicenses();
-                
+
                 document.getElementById('distributeResult').innerHTML = `
                     <div class="result">
                         <h4>✅ 高级版授权码分发成功</h4>
@@ -258,7 +258,7 @@
                         <p>状态：已激活</p>
                     </div>
                 `;
-                
+
                 document.getElementById('step2').classList.add('completed');
                 document.getElementById('step3').classList.add('active');
             } else {
