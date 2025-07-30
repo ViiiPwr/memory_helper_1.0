@@ -992,6 +992,9 @@
             saveUserData();
           }
 
+          // 保存当前用户信息用于标记授权码
+          const userAuthCode = currentUser ? currentUser.authCode : null;
+
           // 清除用户信息
           localStorage.removeItem('currentUser');
           currentUser = null;
@@ -1002,8 +1005,15 @@
           history = [];
           historyTags = [];
 
-          // 标记授权码为已使用
-          licenseManagerV2.markAsUsed(currentUser.authCode);
+          // 标记授权码为已使用（如果用户已登录）
+          if (userAuthCode) {
+            try {
+              licenseManagerV2.markAsUsed(userAuthCode);
+              console.log('授权码已标记为使用:', userAuthCode);
+            } catch (error) {
+              console.error('标记授权码使用失败:', error);
+            }
+          }
 
           // 渲染空界面
           renderHistory();
