@@ -807,13 +807,19 @@
       document.querySelector('.section').style.display = 'none';
     }
 
-    // 显示主界面
+        // 显示主界面
     function showMainInterface() {
       document.getElementById('authOverlay').style.display = 'none';
       document.getElementById('userInfoBar').style.display = 'flex';
       document.querySelector('h1').style.display = 'block';
       document.querySelector('.section').style.display = 'block';
       document.getElementById('currentUserId').textContent = currentUser.userId;
+      
+      // 清理之前的管理员按钮（如果存在）
+      const existingLicenseBtn = document.getElementById('licenseBtn');
+      if (existingLicenseBtn) {
+        existingLicenseBtn.remove();
+      }
       
       // 如果是管理员，显示管理按钮
       if (currentUser.isAdmin) {
@@ -822,7 +828,7 @@
         adminBtn.className = 'text-btn';
         adminBtn.style.color = '#e74c3c';
         adminBtn.textContent = '🔑 授权码管理';
-        adminBtn.addEventListener('click', function() {
+        adminBtn.addEventListener('click', function () {
           window.open('src/pages/license-manager.html', '_blank');
         });
         
