@@ -30,14 +30,37 @@ class LicenseManagerV2 {
         }
         
         console.log(`预置授权码池初始化完成，共 ${this.predefinedLicenses.size} 个授权码`);
+        
+        // 调试：显示前几个授权码
+        console.log('前5个授权码示例:');
+        for (let i = 1; i <= 5; i++) {
+            const code = this.generateLicenseCode(i);
+            console.log(`ID ${i}: ${code}`);
+        }
     }
 
     // 生成授权码
     generateLicenseCode(id) {
         const paddedId = id.toString().padStart(6, '0');
-        const timestamp = Date.now().toString(36);
-        const random = Math.random().toString(36).substring(2, 8);
-        return `PAIRING_PREMIUM_${paddedId}_${timestamp}_${random}`;
+        // 使用固定的种子生成随机字符串，确保每次生成相同的授权码
+        const seed = id * 12345 + 67890;
+        const random1 = this.generateRandomString(seed, 8);
+        const random2 = this.generateRandomString(seed + 1, 6);
+        return `PAIRING_PREMIUM_${paddedId}_${random1}_${random2}`;
+    }
+
+    // 基于种子生成固定随机字符串
+    generateRandomString(seed, length) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = '';
+        let currentSeed = seed;
+        
+        for (let i = 0; i < length; i++) {
+            currentSeed = (currentSeed * 9301 + 49297) % 233280;
+            result += chars[currentSeed % chars.length];
+        }
+        
+        return result;
     }
 
     // 验证授权码
@@ -261,7 +284,7 @@ class LicenseManagerV2 {
 
     // 检查授权码格式
     isValidFormat(code) {
-        const formatRegex = /^PAIRING_PREMIUM_\d{6}_[A-Z0-9]+_[A-Z0-9]+$/;
+        const formatRegex = /^PAIRING_PREMIUM_\d{6}_[A-Z0-9]{8}_[A-Z0-9]{6}$/;
         return formatRegex.test(code);
     }
 
