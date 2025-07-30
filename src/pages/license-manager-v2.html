@@ -313,6 +313,7 @@
             <h2>📋 可用授权码列表</h2>
             <button class="btn" onclick="refreshAvailableLicenses()">刷新列表</button>
             <button class="btn btn-warning" onclick="exportAvailableLicenses()">导出可用授权码</button>
+            <button class="btn btn-warning" onclick="exportAllLicenses()">导出所有授权码</button>
             <div id="availableLicensesList"></div>
             <div class="pagination" id="pagination"></div>
         </div>
@@ -700,9 +701,22 @@
 
         // 导出功能
         function exportAvailableLicenses() {
-            const result = licenseManagerV2.getAvailableLicenses(1, 1000);
-            const data = result.licenses.map(l => ({ id: l.id, code: l.code }));
-            downloadCSV(data, 'available_licenses.csv');
+            // 获取所有可用授权码（100000个）
+            const allLicenses = [];
+            let page = 1;
+            const pageSize = 1000;
+            
+            while (true) {
+                const result = licenseManagerV2.getAvailableLicenses(page, pageSize);
+                if (result.licenses.length === 0) break;
+                
+                allLicenses.push(...result.licenses.map(l => ({ id: l.id, code: l.code })));
+                
+                if (page >= result.totalPages) break;
+                page++;
+            }
+            
+            downloadCSV(allLicenses, 'available_licenses.csv');
         }
 
         function exportDistributedLicenses() {
@@ -718,6 +732,28 @@
         function exportAllData() {
             const data = licenseManagerV2.exportData();
             downloadJSON(data, 'license_data.json');
+        }
+
+        function exportAllLicenses() {
+            // 导出所有授权码（包括所有状态）
+            const allLicenses = [];
+            
+            for (const [code, info] of licenseManagerV2.predefinedLicenses) {
+                allLicenses.push({
+                    id: info.id,
+                    code: info.code,
+                    status: info.status,
+                    createdAt: info.createdAt,
+                    distributedAt: info.distributedAt,
+                    usedAt: info.usedAt,
+                    customerInfo: info.customerInfo ? JSON.stringify(info.customerInfo) : ''
+                });
+            }
+            
+            // 按ID排序
+            allLicenses.sort((a, b) => a.id - b.id);
+            
+            downloadCSV(allLicenses, 'all_licenses.csv');
         }
 
         // 重置系统
