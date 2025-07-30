@@ -89,11 +89,11 @@ class LicenseManagerV2 {
 
         const licenseInfo = this.predefinedLicenses.get(trimmedCode);
 
-        // 检查是否已被使用
+        // 检查是否已被使用（只有used状态才拒绝）
         if (licenseInfo.status === 'used') {
             return {
                 valid: false,
-                message: '授权码已被使用',
+                message: '授权码已被停用',
                 type: 'already_used'
             };
         }
@@ -108,13 +108,15 @@ class LicenseManagerV2 {
             };
         }
 
-        // 验证成功
+        // 验证成功（available和distributed状态都可以使用）
         return {
             valid: true,
             message: '授权码验证成功',
             type: 'success',
             license: trimmedCode
         };
+
+
     }
 
     // 分发授权码

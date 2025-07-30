@@ -1004,6 +1004,11 @@
           correctAnswers = {};
           history = [];
           historyTags = [];
+          currentTags = [];
+          reviewModeCallback = null;
+
+          // 清除复习区域状态
+          clearReviewData();
 
           // 退出登录时不标记授权码为已使用，允许用户重新登录
           if (userAuthCode) {
