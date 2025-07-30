@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>智能重复条目判断测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 5px;
+            background: #f0f0f0;
+            cursor: grab;
+            display: inline-block;
+        }
+
+        .dropzone {
+            border: 2px dashed #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            min-height: 50px;
+        }
+
+        .dropzone.over {
+            background: #e8f4fd;
+        }
+
+        .correct {
+            background-color: #27ae60 !important;
+            border-color: #27ae60 !important;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: #e74c3c !important;
+            border-color: #e74c3c !important;
+            color: white;
+        }
+
+        .info {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>智能重复条目判断测试</h1>
+
+    <div class="test-section">
+        <h2>测试1: 有重复条目的卡组</h2>
+        <div class="info">
+            <p><strong>数据：</strong>A分组：1,2,3 B分组：2,3,4</p>
+            <p><strong>预期行为：</strong>条目拖拽后不消失，可以重复使用</p>
+            <p><strong>展示：</strong>1,2,3,4（取合集）</p>
+        </div>
+        <button onclick="testWithDuplicates()">测试有重复条目的卡组</button>
+        <div id="test1-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试2: 无重复条目的卡组</h2>
+        <div class="info">
+            <p><strong>数据：</strong>A分组：1,2,3 B分组：4,5,6</p>
+            <p><strong>预期行为：</strong>条目拖拽后消失，不能重复使用</p>
+            <p><strong>展示：</strong>1,2,3,4,5,6</p>
+        </div>
+        <button onclick="testWithoutDuplicates()">测试无重复条目的卡组</button>
+        <div id="test2-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>拖拽测试区域</h2>
+        <div id="itemPool"></div>
+        <div class="dropzone" data-group="A">
+            <strong>A分组：</strong>
+        </div>
+        <div class="dropzone" data-group="B">
+            <strong>B分组：</strong>
+        </div>
+        <button onclick="checkAnswers()">检查答案</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let currentTestData = null;
+        let hasDuplicateItems = false;
+
+        // 测试1: 有重复条目的卡组
+        function testWithDuplicates() {
+            currentTestData = {
+                'A': ['1', '2', '3'],
+                'B': ['2', '3', '4']
+            };
+            hasDuplicateItems = true;
+
+            // 展示唯一条目（取合集）
+            const uniqueItems = ['1', '2', '3', '4'];
+            renderItems(uniqueItems);
+
+            document.getElementById('test1-result').innerHTML = `
+                <div class="info">
+                    <p>✅ 检测到重复条目，启用可重复使用功能</p>
+                    <p>展示条目：${uniqueItems.join(', ')}</p>
+                    <p>可以多次拖拽2和3到不同分组，但同一分组内不能重复添加</p>
+                </div>
+            `;
+        }
+
+        // 测试2: 无重复条目的卡组
+        function testWithoutDuplicates() {
+            currentTestData = {
+                'A': ['1', '2', '3'],
+                'B': ['4', '5', '6']
+            };
+            hasDuplicateItems = false;
+
+            // 展示所有条目
+            const allItems = ['1', '2', '3', '4', '5', '6'];
+            renderItems(allItems);
+
+            document.getElementById('test2-result').innerHTML = `
+                <div class="info">
+                    <p>✅ 未检测到重复条目，使用传统拖拽逻辑</p>
+                    <p>展示条目：${allItems.join(', ')}</p>
+                    <p>条目拖拽后消失，不能重复使用</p>
+                </div>
+            `;
+        }
+
+        // 渲染条目
+        function renderItems(items) {
+            const itemPool = document.getElementById('itemPool');
+            itemPool.innerHTML = '';
+
+            items.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item';
+                itemDiv.textContent = item;
+                itemDiv.dataset.text = item;
+                itemDiv.draggable = true;
+
+                // 为每个item添加唯一标识符
+                const dragId = Date.now() + '_' + index + '_' + Math.random().toString(36).substr(2, 9);
+                itemDiv.dataset.dragId = dragId;
+
+                itemDiv.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                        text: item,
+                        group: null
+                    }));
+                    e.dataTransfer.setData('draggedItem', dragId);
+                });
+
+                itemPool.appendChild(itemDiv);
+            });
+        }
+
+        // 设置拖拽区域
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropzones = document.querySelectorAll('.dropzone');
+
+            dropzones.forEach(dropzone => {
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('over');
+                });
+
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.classList.remove('over');
+                });
+
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('over');
+
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+
+                    // 根据是否有重复条目决定是否移除拖拽的条目
+                    if (hasDuplicateItems) {
+                        // 有重复条目：检查当前分组是否已经有这个条目
+                        const existingItems = dropzone.querySelectorAll('.item');
+                        const alreadyExists = Array.from(existingItems).some(item =>
+                            item.textContent === data.text
+                        );
+
+                        if (!alreadyExists) {
+                            // 当前分组还没有这个条目，可以添加
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'item';
+                            itemDiv.textContent = data.text;
+                            itemDiv.dataset.text = data.text;
+                            dropzone.appendChild(itemDiv);
+                        } else {
+                            // 当前分组已经有这个条目，不允许重复添加
+                            alert(`"${data.text}" 已经在此分组中，不能重复添加`);
+                        }
+                    } else {
+                        // 无重复条目：使用原来的逻辑，拖拽后消失
+                        const draggedItem = e.dataTransfer.getData('draggedItem');
+                        if (draggedItem) {
+                            const itemToRemove = document.querySelector(`[data-drag-id="${draggedItem}"]`);
+                            if (itemToRemove) {
+                                itemToRemove.remove();
+                            }
+                        }
+                        const itemDiv = document.createElement('div');
+                        itemDiv.className = 'item';
+                        itemDiv.textContent = data.text;
+                        itemDiv.dataset.text = data.text;
+                        dropzone.appendChild(itemDiv);
+                    }
+                });
+            });
+        });
+
+        // 检查答案
+        function checkAnswers() {
+            if (!currentTestData) {
+                alert('请先选择测试数据');
+                return;
+            }
+
+            const result = document.getElementById('result');
+            let resultHtml = '<h3>检查结果：</h3>';
+
+            // 重置所有item的颜色
+            document.querySelectorAll('.item').forEach(item => {
+                item.classList.remove('correct', 'incorrect');
+            });
+
+            Object.keys(currentTestData).forEach(groupName => {
+                const groupItems = document.querySelectorAll(`[data-group="${groupName}"] .item`);
+                let correctCount = 0;
+                let totalCount = 0;
+
+                groupItems.forEach(item => {
+                    totalCount++;
+                    const isCorrect = currentTestData[groupName].includes(item.textContent);
+
+                    if (isCorrect) {
+                        item.classList.add('correct');
+                        correctCount++;
+                    } else {
+                        item.classList.add('incorrect');
+                    }
+                });
+
+                resultHtml += `<p><strong>${groupName}分组：</strong>正确 ${correctCount}/${currentTestData[groupName].length}</p>`;
+            });
+
+            result.innerHTML = resultHtml;
+        }
+    </script>
+</body>
+
+</html>

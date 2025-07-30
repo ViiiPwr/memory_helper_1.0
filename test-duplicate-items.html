@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>重复条目测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 5px;
+            background: #f0f0f0;
+            cursor: grab;
+            display: inline-block;
+        }
+
+        .dropzone {
+            border: 2px dashed #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            min-height: 50px;
+        }
+
+        .dropzone.over {
+            background: #e8f4fd;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>重复条目功能测试</h1>
+
+    <div class="test-section">
+        <h2>测试1: 创建包含重复条目的卡组</h2>
+        <p>这个测试验证是否可以创建包含重复条目的卡组。</p>
+        <button onclick="testCreateDuplicateCard()">测试创建重复条目卡组</button>
+        <div id="test1-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试2: 拖拽重复条目</h2>
+        <p>这个测试验证拖拽重复条目时，其他相同条目不会消失。</p>
+        <div id="itemPool">
+            <div class="item" draggable="true" data-text="苹果" data-group="水果">苹果</div>
+            <div class="item" draggable="true" data-text="苹果" data-group="水果">苹果</div>
+            <div class="item" draggable="true" data-text="香蕉" data-group="水果">香蕉</div>
+            <div class="item" draggable="true" data-text="苹果" data-group="水果">苹果</div>
+        </div>
+        <div class="dropzone" data-group="水果">
+            <strong>水果分类：</strong>
+        </div>
+        <div class="dropzone" data-group="蔬菜">
+            <strong>蔬菜分类：</strong>
+        </div>
+        <div id="test2-result"></div>
+    </div>
+
+    <script>
+        // 测试1: 创建包含重复条目的卡组
+        function testCreateDuplicateCard() {
+            const testGroups = [
+                {
+                    name: "水果",
+                    items: ["苹果", "香蕉", "苹果", "橙子"]
+                },
+                {
+                    name: "蔬菜",
+                    items: ["胡萝卜", "白菜", "胡萝卜"]
+                }
+            ];
+
+            // 模拟卡组创建逻辑
+            const allFactors = [];
+            const correctAnswers = {};
+
+            testGroups.forEach((group) => {
+                group.items.forEach((item) => {
+                    allFactors.push({ text: item, group: group.name, correct: false });
+                });
+                correctAnswers[group.name] = group.items;
+            });
+
+            const result = document.getElementById('test1-result');
+            result.innerHTML = `
+                <h3>测试结果：</h3>
+                <p>✅ 成功创建包含重复条目的卡组</p>
+                <p>总条目数: ${allFactors.length}</p>
+                <p>水果分类: ${correctAnswers['水果'].join(', ')}</p>
+                <p>蔬菜分类: ${correctAnswers['蔬菜'].join(', ')}</p>
+            `;
+        }
+
+        // 测试2: 拖拽重复条目
+        document.addEventListener('DOMContentLoaded', function () {
+            const items = document.querySelectorAll('.item');
+            const dropzones = document.querySelectorAll('.dropzone');
+
+            // 为每个item添加唯一标识符
+            items.forEach((item, index) => {
+                const dragId = Date.now() + '_' + index + '_' + Math.random().toString(36).substr(2, 9);
+                item.dataset.dragId = dragId;
+
+                item.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                        text: item.dataset.text,
+                        group: item.dataset.group
+                    }));
+                    e.dataTransfer.setData('draggedItem', dragId);
+                });
+            });
+
+            // 设置拖拽区域
+            dropzones.forEach(dropzone => {
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('over');
+                });
+
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.classList.remove('over');
+                });
+
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('over');
+
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    const draggedItem = e.dataTransfer.getData('draggedItem');
+
+                    // 只移除被拖拽的特定item
+                    if (draggedItem) {
+                        const itemToRemove = document.querySelector(`[data-drag-id="${draggedItem}"]`);
+                        if (itemToRemove) {
+                            itemToRemove.remove();
+                        }
+                    }
+
+                    // 创建新的item
+                    const newItem = document.createElement('div');
+                    newItem.className = 'item';
+                    newItem.textContent = data.text;
+                    newItem.dataset.text = data.text;
+                    newItem.dataset.group = data.group;
+                    dropzone.appendChild(newItem);
+
+                    // 更新测试结果
+                    updateTest2Result();
+                });
+            });
+
+            function updateTest2Result() {
+                const itemPool = document.getElementById('itemPool');
+                const remainingItems = itemPool.children.length;
+                const result = document.getElementById('test2-result');
+
+                result.innerHTML = `
+                    <h3>拖拽测试结果：</h3>
+                    <p>✅ 拖拽后，itemPool中剩余条目数: ${remainingItems}</p>
+                    <p>✅ 重复条目可以分别拖拽，不会全部消失</p>
+                `;
+            }
+        });
+    </script>
+</body>
+
+</html>

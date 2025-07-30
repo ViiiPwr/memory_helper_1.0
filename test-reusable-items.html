@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>可重复使用条目测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 5px;
+            background: #f0f0f0;
+            cursor: grab;
+            display: inline-block;
+        }
+
+        .dropzone {
+            border: 2px dashed #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            min-height: 50px;
+        }
+
+        .dropzone.over {
+            background: #e8f4fd;
+        }
+
+        .correct {
+            background-color: #27ae60 !important;
+            border-color: #27ae60 !important;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: #e74c3c !important;
+            border-color: #e74c3c !important;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>可重复使用条目功能测试</h1>
+
+    <div class="test-section">
+        <h2>测试数据</h2>
+        <p>模拟数据：A分组：1,2,3 B分组：2,3,4</p>
+        <p>展示给用户的选项应该是：1,2,3,4（取合集，不重复）</p>
+        <p>用户可以多次拖拽2和3到不同分组</p>
+    </div>
+
+    <div class="test-section">
+        <h2>拖拽测试</h2>
+        <p>拖拽条目到下方分类，条目不会消失，可以重复使用</p>
+        <div id="itemPool">
+            <div class="item" draggable="true" data-text="1">1</div>
+            <div class="item" draggable="true" data-text="2">2</div>
+            <div class="item" draggable="true" data-text="3">3</div>
+            <div class="item" draggable="true" data-text="4">4</div>
+        </div>
+        <div class="dropzone" data-group="A">
+            <strong>A分组：</strong>
+        </div>
+        <div class="dropzone" data-group="B">
+            <strong>B分组：</strong>
+        </div>
+        <button onclick="checkAnswers()">检查答案</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 正确答案
+        const correctAnswers = {
+            'A': ['1', '2', '3'],
+            'B': ['2', '3', '4']
+        };
+
+        // 设置拖拽功能
+        document.addEventListener('DOMContentLoaded', function () {
+            const items = document.querySelectorAll('.item');
+            const dropzones = document.querySelectorAll('.dropzone');
+
+            // 为每个item添加拖拽事件
+            items.forEach((item, index) => {
+                const dragId = Date.now() + '_' + index + '_' + Math.random().toString(36).substr(2, 9);
+                item.dataset.dragId = dragId;
+
+                item.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                        text: item.dataset.text,
+                        group: item.dataset.group
+                    }));
+                    e.dataTransfer.setData('draggedItem', dragId);
+                });
+            });
+
+            // 设置拖拽区域
+            dropzones.forEach(dropzone => {
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('over');
+                });
+
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.classList.remove('over');
+                });
+
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('over');
+
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+
+                    // 条目拖拽后不消失，可以重复使用
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'item';
+                    itemDiv.textContent = data.text;
+                    itemDiv.dataset.text = data.text;
+                    itemDiv.dataset.group = data.group;
+                    dropzone.appendChild(itemDiv);
+                });
+            });
+        });
+
+        // 检查答案
+        function checkAnswers() {
+            const result = document.getElementById('result');
+            let resultHtml = '<h3>检查结果：</h3>';
+
+            // 重置所有item的颜色
+            document.querySelectorAll('.item').forEach(item => {
+                item.classList.remove('correct', 'incorrect');
+            });
+
+            Object.keys(correctAnswers).forEach(groupName => {
+                const groupItems = document.querySelectorAll(`[data-group="${groupName}"] .item`);
+                let correctCount = 0;
+                let totalCount = 0;
+
+                groupItems.forEach(item => {
+                    totalCount++;
+                    const isCorrect = correctAnswers[groupName].includes(item.textContent);
+
+                    if (isCorrect) {
+                        item.classList.add('correct');
+                        correctCount++;
+                    } else {
+                        item.classList.add('incorrect');
+                    }
+                });
+
+                resultHtml += `<p><strong>${groupName}分组：</strong>正确 ${correctCount}/${correctAnswers[groupName].length}</p>`;
+            });
+
+            result.innerHTML = resultHtml;
+        }
+    </script>
+</body>
+
+</html>

@@ -1182,35 +1182,46 @@
           return;
         }
 
-        // 检查所有分组内的项目名称是否有重复
-        const allItems = [];
-        const duplicateItems = [];
-
-        validGroups.forEach((group) => {
-          group.items.forEach((item) => {
-            if (allItems.includes(item)) {
-              duplicateItems.push(item);
-            } else {
-              allItems.push(item);
-            }
-          });
-        });
-
-        if (duplicateItems.length > 0) {
-          const uniqueDuplicates = [...new Set(duplicateItems)];
-          showToast(`添加失败：项目名称"${uniqueDuplicates.join('、')}"重复，请重新编辑`, "error");
-          return;
-        }
+        // 允许重复条目，不再检查重复
 
         allFactors = [];
         correctAnswers = {};
 
+        // 收集所有条目和唯一条目
+        const allItems = [];
+        const uniqueItems = new Set();
         validGroups.forEach((group) => {
           group.items.forEach((item) => {
-            allFactors.push({ text: item, group: group.name, correct: false });
+            allItems.push(item);
+            uniqueItems.add(item);
           });
+        });
+
+        // 检查是否有重复条目
+        const hasDuplicateItems = allItems.length !== uniqueItems.size;
+
+        // 根据是否有重复条目决定使用哪种逻辑
+        if (hasDuplicateItems) {
+          // 有重复条目：使用可重复使用逻辑（取合集）
+          uniqueItems.forEach((item) => {
+            allFactors.push({ text: item, group: null, correct: false });
+          });
+        } else {
+          // 无重复条目：使用原来的逻辑
+          validGroups.forEach((group) => {
+            group.items.forEach((item) => {
+              allFactors.push({ text: item, group: group.name, correct: false });
+            });
+          });
+        }
+
+        // 保存正确答案
+        validGroups.forEach((group) => {
           correctAnswers[group.name] = group.items;
         });
+
+        // 保存是否有重复条目的标志
+        window.hasDuplicateItems = hasDuplicateItems;
 
         const cardSetTitle =
           titleInput.value.trim() || `卡组${history.length + 1}`;
@@ -1541,8 +1552,13 @@
       div.textContent = text;
       div.dataset.group = group;
 
+      // 为每个item添加唯一标识符
+      const dragId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      div.dataset.dragId = dragId;
+
       div.addEventListener("dragstart", (e) => {
         e.dataTransfer.setData("text/plain", JSON.stringify({ text, group }));
+        e.dataTransfer.setData("draggedItem", dragId);
       });
 
       return div;
@@ -1563,10 +1579,34 @@
         dropzone.classList.remove("over");
         const data = JSON.parse(e.dataTransfer.getData("text/plain"));
 
-        removeItemFromAll(data.text);
+        // 根据是否有重复条目决定是否移除拖拽的条目
+        if (window.hasDuplicateItems) {
+          // 有重复条目：检查当前分组是否已经有这个条目
+          const existingItems = dropzone.querySelectorAll('.item');
+          const alreadyExists = Array.from(existingItems).some(item =>
+            item.textContent === data.text
+          );
 
-        const itemDiv = createDraggableItem(data.text, data.group);
-        dropzone.appendChild(itemDiv);
+          if (!alreadyExists) {
+            // 当前分组还没有这个条目，可以添加
+            const itemDiv = createDraggableItem(data.text, data.group);
+            dropzone.appendChild(itemDiv);
+          } else {
+            // 当前分组已经有这个条目，不允许重复添加
+            showToast(`"${data.text}" 已经在此分组中，不能重复添加`, 'warning');
+          }
+        } else {
+          // 无重复条目：使用原来的逻辑，拖拽后消失
+          const draggedItem = e.dataTransfer.getData("draggedItem");
+          if (draggedItem) {
+            const itemToRemove = document.querySelector(`[data-drag-id="${draggedItem}"]`);
+            if (itemToRemove) {
+              itemToRemove.remove();
+            }
+          }
+          const itemDiv = createDraggableItem(data.text, data.group);
+          dropzone.appendChild(itemDiv);
+        }
       });
     }
 
@@ -1580,19 +1620,16 @@
           e.pageY >= rect.top &&
           e.pageY <= rect.bottom
         ) {
-          removeItemFromAll(e.target.textContent);
-          itemPool.appendChild(e.target);
+          // 如果拖拽回itemPool，不需要移除，因为item已经在itemPool中了
+          // 只需要确保它在正确的位置
+          if (e.target.parentElement !== itemPool) {
+            itemPool.appendChild(e.target);
+          }
         }
       }
     });
 
-    function removeItemFromAll(text) {
-      document.querySelectorAll(".item").forEach((item) => {
-        if (item.textContent === text) {
-          item.remove();
-        }
-      });
-    }
+    // removeItemFromAll函数已不再使用，因为现在支持重复条目
 
     document
       .getElementById("checkAnswers")
@@ -1636,11 +1673,17 @@
 
           items.forEach((item) => {
             answeredCount++;
-            // 根据item原本所属的类别判断正确性
-            const itemOriginalGroup = item.dataset.group;
-            const isCorrect = itemOriginalGroup === groupName;
 
-
+            // 根据是否有重复条目决定判断方式
+            let isCorrect;
+            if (window.hasDuplicateItems) {
+              // 有重复条目：检查这个条目是否属于当前分组
+              isCorrect = correctAnswers[groupName].includes(item.textContent);
+            } else {
+              // 无重复条目：根据item原本所属的类别判断正确性
+              const itemOriginalGroup = item.dataset.group;
+              isCorrect = itemOriginalGroup === groupName;
+            }
 
             if (isCorrect) {
               item.classList.add("correct");
@@ -1678,9 +1721,32 @@
           await saveHistory();
         })();
 
-        // 新增：如果所有item都被拖入分类栏，则锁定所有分类栏内的item，并显示"再来一遍"按钮
+        // 新增：检查是否所有分组都有足够的条目
         const itemPool = document.getElementById("itemPool");
-        if (itemPool && itemPool.children.length === 0) {
+        let allGroupsComplete = true;
+
+        // 根据是否有重复条目决定完成判断逻辑
+        if (window.hasDuplicateItems) {
+          // 有重复条目：检查每个分组是否都有足够的正确条目
+          Object.keys(correctAnswers).forEach((groupName) => {
+            const groupItems = document.querySelectorAll(`.question:has(strong:contains("${groupName}")) .item`);
+            const correctItemsInGroup = Array.from(groupItems).filter(item =>
+              correctAnswers[groupName].includes(item.textContent)
+            ).length;
+
+            if (correctItemsInGroup < correctAnswers[groupName].length) {
+              allGroupsComplete = false;
+            }
+          });
+        } else {
+          // 无重复条目：检查itemPool是否为空
+          if (itemPool && itemPool.children.length > 0) {
+            allGroupsComplete = false;
+          }
+        }
+
+        // 如果所有分组都完成，则锁定并显示"再来一遍"按钮
+        if (allGroupsComplete) {
           document.querySelectorAll('.question .item').forEach(item => {
             item.draggable = false;
             item.classList.add('locked');
@@ -1995,36 +2061,47 @@
           return;
         }
 
-        // 检查项目名称是否有重复
-        const allItems = [];
-        const duplicateItems = [];
-
-        Object.values(newGroups).forEach(items => {
-          items.forEach(item => {
-            if (allItems.includes(item)) {
-              duplicateItems.push(item);
-            } else {
-              allItems.push(item);
-            }
-          });
-        });
-
-        if (duplicateItems.length > 0) {
-          const uniqueDuplicates = [...new Set(duplicateItems)];
-          showToast(`修改失败：项目名称"${uniqueDuplicates.join('、')}"重复，请重新编辑`, 'error');
-          return;
-        }
+        // 允许重复条目，不再检查重复
 
         // 更新历史记录
         const newFactors = [];
         const newCorrectAnswers = {};
 
+        // 收集所有条目和唯一条目
+        const allItems = [];
+        const uniqueItems = new Set();
         Object.keys(newGroups).forEach(groupName => {
           newGroups[groupName].forEach(item => {
-            newFactors.push({ text: item, group: groupName, correct: false });
+            allItems.push(item);
+            uniqueItems.add(item);
           });
+        });
+
+        // 检查是否有重复条目
+        const hasDuplicateItems = allItems.length !== uniqueItems.size;
+
+        // 根据是否有重复条目决定使用哪种逻辑
+        if (hasDuplicateItems) {
+          // 有重复条目：使用可重复使用逻辑（取合集）
+          uniqueItems.forEach(item => {
+            newFactors.push({ text: item, group: null, correct: false });
+          });
+        } else {
+          // 无重复条目：使用原来的逻辑
+          Object.keys(newGroups).forEach(groupName => {
+            newGroups[groupName].forEach(item => {
+              newFactors.push({ text: item, group: groupName, correct: false });
+            });
+          });
+        }
+
+        // 保存正确答案
+        Object.keys(newGroups).forEach(groupName => {
           newCorrectAnswers[groupName] = newGroups[groupName];
         });
+
+        // 保存是否有重复条目的标志
+        window.hasDuplicateItems = hasDuplicateItems;
 
         history[index] = {
           title: title,
@@ -2521,35 +2598,46 @@
           return;
         }
 
-        // 检查所有分组内的项目名称是否有重复
-        const allItems = [];
-        const duplicateItems = [];
-
-        validGroups.forEach((group) => {
-          group.items.forEach((item) => {
-            if (allItems.includes(item)) {
-              duplicateItems.push(item);
-            } else {
-              allItems.push(item);
-            }
-          });
-        });
-
-        if (duplicateItems.length > 0) {
-          const uniqueDuplicates = [...new Set(duplicateItems)];
-          showToast(`添加失败：项目名称"${uniqueDuplicates.join('、')}"重复，请重新编辑`, "error");
-          return;
-        }
+        // 允许重复条目，不再检查重复
 
         allFactors = [];
         correctAnswers = {};
 
+        // 收集所有条目和唯一条目
+        const allItems = [];
+        const uniqueItems = new Set();
         validGroups.forEach((group) => {
           group.items.forEach((item) => {
-            allFactors.push({ text: item, group: group.name, correct: false });
+            allItems.push(item);
+            uniqueItems.add(item);
           });
+        });
+
+        // 检查是否有重复条目
+        const hasDuplicateItems = allItems.length !== uniqueItems.size;
+
+        // 根据是否有重复条目决定使用哪种逻辑
+        if (hasDuplicateItems) {
+          // 有重复条目：使用可重复使用逻辑（取合集）
+          uniqueItems.forEach((item) => {
+            allFactors.push({ text: item, group: null, correct: false });
+          });
+        } else {
+          // 无重复条目：使用原来的逻辑
+          validGroups.forEach((group) => {
+            group.items.forEach((item) => {
+              allFactors.push({ text: item, group: group.name, correct: false });
+            });
+          });
+        }
+
+        // 保存正确答案
+        validGroups.forEach((group) => {
           correctAnswers[group.name] = group.items;
         });
+
+        // 保存是否有重复条目的标志
+        window.hasDuplicateItems = hasDuplicateItems;
 
         const cardSetTitle = titleInput.value.trim() || `卡组${history.length + 1}`;
 
