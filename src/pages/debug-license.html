@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,18 +15,21 @@
             padding: 20px;
             background: #f5f5f5;
         }
+
         .container {
             background: white;
             border-radius: 10px;
             padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         .debug-section {
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 20px;
             margin: 20px 0;
         }
+
         .btn {
             background: #4CAF50;
             color: white;
@@ -35,9 +39,11 @@
             cursor: pointer;
             margin: 5px;
         }
+
         .btn:hover {
             background: #45a049;
         }
+
         .result {
             background: #e8f5e8;
             border: 1px solid #4CAF50;
@@ -45,14 +51,17 @@
             border-radius: 5px;
             margin: 10px 0;
         }
+
         .error {
             background: #ffebee;
             border: 1px solid #f44336;
         }
+
         .info {
             background: #e3f2fd;
             border: 1px solid #2196F3;
         }
+
         pre {
             background: #f5f5f5;
             padding: 10px;
@@ -61,10 +70,11 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🔍 授权码调试工具</h1>
-        
+
         <div class="debug-section">
             <h3>1. 生成授权码</h3>
             <button class="btn" onclick="generateLicense()">生成新授权码</button>
@@ -127,7 +137,7 @@
             if (success) {
                 // 重新加载授权码管理器
                 licenseManager.loadDistributedLicenses();
-                
+
                 document.getElementById('distributeResult').innerHTML = `
                     <div class="result">
                         <h4>✅ 授权码分发成功</h4>
@@ -146,14 +156,14 @@
 
         function testValidation() {
             const input = document.getElementById('testLicenseInput').value.trim();
-            
+
             if (!input) {
                 alert('请输入授权码');
                 return;
             }
 
             const result = licenseManager.validateLicense(input);
-            
+
             document.getElementById('validationResult').innerHTML = `
                 <div class="result ${result.valid ? '' : 'error'}">
                     <h4>${result.valid ? '✅ 验证成功' : '❌ 验证失败'}</h4>
@@ -177,7 +187,7 @@
             const distributedLicenses = licenseDistributor.getAllDistributedLicenses();
             const activeLicenses = licenseDistributor.getActiveLicenses();
             const validLicenses = Array.from(licenseManager.validLicenses);
-            
+
             document.getElementById('debugInfo').innerHTML = `
                 <div class="info">
                     <h4>📊 调试信息</h4>
@@ -200,13 +210,13 @@
         function clearData() {
             localStorage.removeItem('pairing_license_distribution');
             localStorage.removeItem('user_licenses');
-            
+
             // 重新初始化
             licenseManager.validLicenses.clear();
             licenseManager.loadValidLicenses();
-            
+
             licenseDistributor.distributedLicenses = [];
-            
+
             document.getElementById('clearResult').innerHTML = `
                 <div class="result">
                     <h4>✅ 数据已清理</h4>
@@ -216,9 +226,10 @@
         }
 
         // 页面加载时显示初始状态
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             showDebugInfo();
         });
     </script>
 </body>
-</html> 
+
+</html>

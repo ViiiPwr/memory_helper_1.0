@@ -230,7 +230,7 @@
                 <input type="text" id="newLicenseInput" placeholder="输入新的授权码" />
             </div>
             <button class="btn btn-success" onclick="addLicense()">添加授权码</button>
-            <button class="btn btn-warning" onclick="generateTestLicense()">生成测试授权码</button>
+            <button class="btn btn-warning" onclick="generateTestLicense()">生成高级版授权码</button>
         </div>
 
         <!-- 授权码分发 -->
@@ -244,9 +244,6 @@
                 <label for="distributeTypeSelect">类型：</label>
                 <select id="distributeTypeSelect">
                     <option value="premium">高级版</option>
-                    <option value="standard">标准版</option>
-                    <option value="trial">试用版</option>
-                    <option value="free">免费版</option>
                 </select>
             </div>
             <div class="input-group">
@@ -276,35 +273,20 @@
 
         <!-- 授权码类型说明 -->
         <div class="section">
-            <h2>📖 授权码类型说明</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
-                <div style="background: white; padding: 1rem; border-radius: 6px; border: 1px solid #ddd;">
-                    <h3 style="color: #e74c3c; margin-top: 0;">高级版 (PAIRING_PREMIUM_)</h3>
-                    <ul class="feature-list">
-                        <li>无限卡组创建</li>
-                        <li>数据导出功能</li>
-                        <li>高级统计功能</li>
-                        <li>优先技术支持</li>
-                    </ul>
-                </div>
-                <div style="background: white; padding: 1rem; border-radius: 6px; border: 1px solid #ddd;">
-                    <h3 style="color: #f39c12; margin-top: 0;">试用版 (PAIRING_TRIAL_)</h3>
-                    <ul class="feature-list">
-                        <li>30天试用期</li>
-                        <li>基础功能使用</li>
-                        <li>最多10个卡组</li>
-                        <li>基础数据导出</li>
-                    </ul>
-                </div>
-                <div style="background: white; padding: 1rem; border-radius: 6px; border: 1px solid #ddd;">
-                    <h3 style="color: #27ae60; margin-top: 0;">免费版 (PAIRING_FREE_)</h3>
-                    <ul class="feature-list">
-                        <li>基础功能使用</li>
-                        <li>最多5个卡组</li>
-                        <li>基础数据保存</li>
-                        <li>社区支持</li>
-                    </ul>
-                </div>
+            <h2>📖 高级版授权码说明</h2>
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; border: 1px solid #ddd;">
+                <h3 style="color: #e74c3c; margin-top: 0;">高级版 (PAIRING_PREMIUM_)</h3>
+                <ul class="feature-list">
+                    <li>无限卡组创建</li>
+                    <li>数据导出功能</li>
+                    <li>高级统计功能</li>
+                    <li>优先技术支持</li>
+                    <li>完整功能访问</li>
+                    <li>无使用限制</li>
+                </ul>
+                <p style="margin-top: 1rem; color: #666; font-style: italic;">
+                    高级版授权码提供完整的功能访问权限，适合专业用户和商业使用。
+                </p>
             </div>
         </div>
     </div>
@@ -369,14 +351,12 @@
             }
         }
 
-        // 生成测试授权码
+        // 生成高级版授权码
         function generateTestLicense() {
-            const types = ['premium', 'trial', 'free', 'standard'];
-            const randomType = types[Math.floor(Math.random() * types.length)];
-            const licenseCode = licenseManager.generateLicense(randomType);
+            const licenseCode = licenseManager.generateLicense('premium');
             
             document.getElementById('newLicenseInput').value = licenseCode;
-            alert(`生成的测试授权码: ${licenseCode}\n类型: ${randomType}`);
+            alert(`生成的高级版授权码: ${licenseCode}\n类型: 高级版`);
         }
 
         // 刷新统计信息
@@ -394,12 +374,12 @@
                     <div class="stat-label">高级版</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${stats.trial}</div>
-                    <div class="stat-label">试用版</div>
+                    <div class="stat-number">${licenseDistributor.getActiveLicenses().length}</div>
+                    <div class="stat-label">已分发</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number">${stats.free}</div>
-                    <div class="stat-label">免费版</div>
+                    <div class="stat-number">${licenseDistributor.getDistributionStats().active}</div>
+                    <div class="stat-label">活跃授权码</div>
                 </div>
             `;
         }

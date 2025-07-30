@@ -167,21 +167,7 @@ class LicenseManager {
             return {
                 type: 'premium',
                 name: '高级版',
-                features: ['无限卡组', '数据导出', '高级功能'],
-                validUntil: '永久有效'
-            };
-        } else if (trimmedCode.startsWith('PAIRING_TRIAL_')) {
-            return {
-                type: 'trial',
-                name: '试用版',
-                features: ['基础功能', '30天试用'],
-                validUntil: '30天后过期'
-            };
-        } else if (trimmedCode.startsWith('PAIRING_FREE_')) {
-            return {
-                type: 'free',
-                name: '免费版',
-                features: ['基础功能'],
+                features: ['无限卡组创建', '数据导出功能', '高级统计功能', '优先技术支持', '完整功能访问', '无使用限制'],
                 validUntil: '永久有效'
             };
         } else if (trimmedCode.startsWith('PAIRING_ADMIN_')) {
@@ -194,29 +180,25 @@ class LicenseManager {
         }
         
         return {
-            type: 'standard',
-            name: '标准版',
-            features: ['基础功能'],
+            type: 'premium',
+            name: '高级版',
+            features: ['无限卡组创建', '数据导出功能', '高级统计功能', '优先技术支持', '完整功能访问', '无使用限制'],
             validUntil: '永久有效'
         };
     }
 
-    // 生成授权码（用于测试）
-    generateLicense(type = 'standard') {
+    // 生成授权码（只生成高级版）
+    generateLicense(type = 'premium') {
         const timestamp = Date.now().toString(36);
         const random = Math.random().toString(36).substring(2, 8);
         
         switch (type) {
             case 'premium':
                 return `PAIRING_PREMIUM_${timestamp}_${random}`;
-            case 'trial':
-                return `PAIRING_TRIAL_${timestamp}_${random}`;
-            case 'free':
-                return `PAIRING_FREE_${timestamp}_${random}`;
             case 'admin':
                 return `PAIRING_ADMIN_${timestamp}_${random}`;
             default:
-                return `PAIRING_STD_${timestamp}_${random}`;
+                return `PAIRING_PREMIUM_${timestamp}_${random}`;
         }
     }
 
@@ -225,16 +207,10 @@ class LicenseManager {
         const totalLicenses = this.validLicenses.size;
         const premiumLicenses = Array.from(this.validLicenses)
             .filter(license => license.startsWith('PAIRING_PREMIUM_')).length;
-        const trialLicenses = Array.from(this.validLicenses)
-            .filter(license => license.startsWith('PAIRING_TRIAL_')).length;
-        const freeLicenses = Array.from(this.validLicenses)
-            .filter(license => license.startsWith('PAIRING_FREE_')).length;
 
         return {
             total: totalLicenses,
-            premium: premiumLicenses,
-            trial: trialLicenses,
-            free: freeLicenses
+            premium: premiumLicenses
         };
     }
 }
