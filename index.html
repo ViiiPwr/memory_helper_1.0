@@ -777,6 +777,19 @@
     </div>
   </div>
 
+  <!-- 数据管理区域 -->
+  <div class="section" id="dataManagement">
+    <div class="section-title">数据管理</div>
+    <div class="section-content">
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button id="exportDataBtn" style="background: #27ae60;">导出数据</button>
+        <button id="importDataBtn" style="background: #3498db;">导入数据</button>
+        <input type="file" id="importFileInput" accept=".json" style="display: none;" />
+      </div>
+      <div id="dataManagementResult" style="margin-top: 10px;"></div>
+    </div>
+  </div>
+
   <script>
     // 用户数据管理
     // 初始化用户系统
@@ -1162,6 +1175,31 @@
           return;
         }
 
+        if (validGroups.length > 6) {
+          showToast("最多支持6个分组，当前有" + validGroups.length + "个分组", "error");
+          return;
+        }
+
+        // 检查所有分组内的项目名称是否有重复
+        const allItems = [];
+        const duplicateItems = [];
+        
+        validGroups.forEach((group) => {
+          group.items.forEach((item) => {
+            if (allItems.includes(item)) {
+              duplicateItems.push(item);
+            } else {
+              allItems.push(item);
+            }
+          });
+        });
+
+        if (duplicateItems.length > 0) {
+          const uniqueDuplicates = [...new Set(duplicateItems)];
+          showToast(`添加失败：项目名称"${uniqueDuplicates.join('、')}"重复，请重新编辑`, "error");
+          return;
+        }
+
         allFactors = [];
         correctAnswers = {};
 
@@ -1196,7 +1234,11 @@
         renderHistory(); // 再次刷新历史区
       });
 
-    function renderHistory(filteredHistory = null) {
+    // 分页变量
+    let currentHistoryPage = 1;
+    const historyPageSize = 10;
+
+    function renderHistory(filteredHistory = null, page = 1) {
       const historyList = document.getElementById("historyList");
       historyList.innerHTML = "";
 
@@ -1222,7 +1264,16 @@
         return;
       }
 
-      displayHistory.forEach((entry, index) => {
+      // 计算分页
+      const totalPages = Math.ceil(displayHistory.length / historyPageSize);
+      const startIndex = (page - 1) * historyPageSize;
+      const endIndex = startIndex + historyPageSize;
+      const currentPageData = displayHistory.slice(startIndex, endIndex);
+
+      // 更新当前页码
+      currentHistoryPage = page;
+
+      currentPageData.forEach((entry, index) => {
         const cardDiv = document.createElement("div");
         cardDiv.className = "history-card";
         cardDiv.style.cssText = `
@@ -1236,9 +1287,10 @@
           box-shadow: 0 1px 4px rgba(0,0,0,0.1);
         `;
 
+        const globalIndex = startIndex + index;
         cardDiv.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-            <h3 style="margin: 0; color: #2c3e50; font-size: 1.1em;">${entry.title || `卡组 ${index + 1}`}</h3>
+            <h3 style="margin: 0; color: #2c3e50; font-size: 1.1em;">${entry.title || `卡组 ${globalIndex + 1}`}</h3>
             <div style="display: flex; gap: 5px;">
                       <button class="edit-card" style="background: #e67e22; padding: 4px 8px; font-size: 0.8em; border: none; color: white; border-radius: 4px; cursor: pointer;">编辑</button>
         <button class="delete-card" style="background: #95a5a6; padding: 4px 8px; font-size: 0.8em; border: none; color: white; border-radius: 4px; cursor: pointer;">删除</button>
@@ -1279,6 +1331,59 @@
 
         historyList.appendChild(cardDiv);
       });
+
+      // 添加分页控件
+      if (totalPages > 1) {
+        const paginationDiv = document.createElement("div");
+        paginationDiv.style.cssText = `
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-top: 20px;
+          gap: 10px;
+        `;
+
+        // 上一页按钮
+        if (page > 1) {
+          const prevBtn = document.createElement("button");
+          prevBtn.textContent = "上一页";
+          prevBtn.style.cssText = `
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+          `;
+          prevBtn.onclick = () => renderHistory(filteredHistory, page - 1);
+          paginationDiv.appendChild(prevBtn);
+        }
+
+        // 页码显示
+        const pageInfo = document.createElement("span");
+        pageInfo.textContent = `第 ${page} 页，共 ${totalPages} 页`;
+        pageInfo.style.cssText = `
+          padding: 8px 12px;
+          color: #666;
+        `;
+        paginationDiv.appendChild(pageInfo);
+
+        // 下一页按钮
+        if (page < totalPages) {
+          const nextBtn = document.createElement("button");
+          nextBtn.textContent = "下一页";
+          nextBtn.style.cssText = `
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+          `;
+          nextBtn.onclick = () => renderHistory(filteredHistory, page + 1);
+          paginationDiv.appendChild(nextBtn);
+        }
+
+        historyList.appendChild(paginationDiv);
+      }
     }
 
     // 新增：弹窗选择复习模式
@@ -2024,10 +2129,76 @@
         this.parentElement.remove();
       };
 
-      // 重置生成按钮
-      const generateBtn = document.getElementById("generate");
-      generateBtn.textContent = "生成配对题";
-      generateBtn.onclick = function () {
+          // 数据导出导入函数
+    function exportAllData() {
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        user: currentUser,
+        history: history,
+        historyTags: historyTags,
+        version: "1.0"
+      };
+
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `配对题数据_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast('数据导出成功', 'success');
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importData = JSON.parse(e.target.result);
+          
+          if (!importData.history || !Array.isArray(importData.history)) {
+            showToast('导入文件格式错误', 'error');
+            return;
+          }
+
+          // 确认导入
+          showConfirm(`确定要导入 ${importData.history.length} 个卡组吗？这将覆盖当前数据。`, () => {
+            history = importData.history;
+            if (importData.historyTags) {
+              historyTags = importData.historyTags;
+            }
+            
+            (async function() {
+              await saveHistory();
+              await saveHistoryTags();
+              renderHistory();
+              showToast(`成功导入 ${history.length} 个卡组`, 'success');
+            })();
+          }, () => {
+            showToast('导入已取消', 'info');
+          });
+
+        } catch (error) {
+          console.error('导入数据失败:', error);
+          showToast('导入文件格式错误', 'error');
+        }
+      };
+      reader.readAsText(file);
+      
+      // 清空文件输入框
+      event.target.value = '';
+    }
+
+    // 重置生成按钮
+    const generateBtn = document.getElementById("generate");
+    generateBtn.textContent = "生成配对题";
+    generateBtn.onclick = function () {
         // 恢复原来的生成逻辑
         // 验证题目名称
         const titleInput = document.getElementById("cardSetTitle");
@@ -2069,6 +2240,31 @@
           return;
         }
 
+        if (validGroups.length > 6) {
+          showToast("最多支持6个分组，当前有" + validGroups.length + "个分组", "error");
+          return;
+        }
+
+        // 检查所有分组内的项目名称是否有重复
+        const allItems = [];
+        const duplicateItems = [];
+        
+        validGroups.forEach((group) => {
+          group.items.forEach((item) => {
+            if (allItems.includes(item)) {
+              duplicateItems.push(item);
+            } else {
+              allItems.push(item);
+            }
+          });
+        });
+
+        if (duplicateItems.length > 0) {
+          const uniqueDuplicates = [...new Set(duplicateItems)];
+          showToast(`添加失败：项目名称"${uniqueDuplicates.join('、')}"重复，请重新编辑`, "error");
+          return;
+        }
+
         allFactors = [];
         correctAnswers = {};
 
@@ -2079,8 +2275,15 @@
           correctAnswers[group.name] = group.items;
         });
 
-        const cardSetTitle =
-          titleInput.value.trim() || `卡组${history.length + 1}`;
+        const cardSetTitle = titleInput.value.trim() || `卡组${history.length + 1}`;
+
+        // 检查卡组名称是否重复
+        const existingCard = history.find(card => card.title === cardSetTitle);
+        if (existingCard) {
+          showToast(`卡组名称"${cardSetTitle}"已存在，请使用其他名称`, "error");
+          titleInput.focus();
+          return;
+        }
 
         history.push({
           title: cardSetTitle,
@@ -2128,6 +2331,13 @@
 
     // 退出登录按钮事件
     document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    // 数据管理事件
+    document.getElementById('exportDataBtn').addEventListener('click', exportAllData);
+    document.getElementById('importDataBtn').addEventListener('click', () => {
+      document.getElementById('importFileInput').click();
+    });
+    document.getElementById('importFileInput').addEventListener('change', importData);
 
     // 授权码管理按钮事件（仅开发者模式）
     // document.getElementById('licenseBtn').addEventListener('click', function () {
