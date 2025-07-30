@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>快速测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            margin: 5px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔧 快速功能测试</h1>
+
+    <div class="test-section">
+        <h3>1. 基础功能测试</h3>
+        <button class="btn" onclick="testBasicFunctions()">测试基础功能</button>
+        <button class="btn" onclick="testLogin()">测试登录</button>
+        <button class="btn" onclick="testLogout()">测试退出</button>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 存储功能测试</h3>
+        <button class="btn" onclick="testStorage()">测试存储</button>
+        <button class="btn" onclick="clearLog()">清空日志</button>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <script src="local-storage.js"></script>
+    <script>
+        let logElement = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : type === 'warning' ? 'orange' : 'black';
+            logElement.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            logElement.innerHTML = '';
+        }
+
+        function testBasicFunctions() {
+            log('开始基础功能测试...');
+
+            // 测试变量声明
+            try {
+                if (typeof localStorageManager !== 'undefined') {
+                    log('✅ localStorageManager 已定义', 'success');
+                } else {
+                    log('❌ localStorageManager 未定义', 'error');
+                }
+
+                if (typeof cloudDB !== 'undefined') {
+                    log('✅ cloudDB 已定义', 'success');
+                } else {
+                    log('❌ cloudDB 未定义', 'error');
+                }
+
+                if (typeof currentUser !== 'undefined') {
+                    log('✅ currentUser 已定义', 'success');
+                } else {
+                    log('❌ currentUser 未定义', 'error');
+                }
+            } catch (error) {
+                log('❌ 基础功能测试失败: ' + error.message, 'error');
+            }
+        }
+
+        function testLogin() {
+            log('开始登录测试...');
+            try {
+                // 模拟登录
+                const testUser = {
+                    userId: 'test_user',
+                    authCode: 'test123',
+                    loginTime: new Date().toISOString()
+                };
+
+                localStorage.setItem('currentUser', JSON.stringify(testUser));
+                log('✅ 用户信息已保存', 'success');
+
+                // 测试数据保存
+                const testData = [{
+                    title: '测试卡组',
+                    tags: ['测试'],
+                    factors: [],
+                    correctAnswers: {},
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                }];
+
+                localStorage.setItem(`history_test_user`, JSON.stringify(testData));
+                log('✅ 测试数据已保存', 'success');
+
+            } catch (error) {
+                log('❌ 登录测试失败: ' + error.message, 'error');
+            }
+        }
+
+        function testLogout() {
+            log('开始退出测试...');
+            try {
+                localStorage.removeItem('currentUser');
+                log('✅ 用户信息已清除', 'success');
+
+                const savedUser = localStorage.getItem('currentUser');
+                if (!savedUser) {
+                    log('✅ 退出登录成功', 'success');
+                } else {
+                    log('❌ 退出登录失败', 'error');
+                }
+            } catch (error) {
+                log('❌ 退出测试失败: ' + error.message, 'error');
+            }
+        }
+
+        function testStorage() {
+            log('开始存储测试...');
+            try {
+                if (typeof localStorageManager !== 'undefined') {
+                    const info = localStorageManager.getStorageInfo();
+                    log(`✅ 存储信息: ${info.totalSizeFormatted}, ${info.itemCount} 个项目`, 'success');
+                } else {
+                    log('❌ localStorageManager 不可用', 'error');
+                }
+            } catch (error) {
+                log('❌ 存储测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // 页面加载时自动测试
+        window.addEventListener('load', function () {
+            log('页面已加载，开始自动测试...');
+            testBasicFunctions();
+        });
+    </script>
+</body>
+
+</html>

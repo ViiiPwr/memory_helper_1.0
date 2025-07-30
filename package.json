@@ -32,9 +32,8 @@
     "files": [
       "main.js",
       "index.html",
-      "cloud-config.js",
-      "cloud-db.js",
-      "test-cloud.html",
+      "local-storage.js",
+      "data-manager.html",
       "node_modules/**/*"
     ],
     "mac": {

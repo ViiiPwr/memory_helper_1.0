@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能测试 - 配对题生成器</title>
+    <script src="local-storage.js"></script>
+    <style>
+        body {
+            font-family: "Segoe UI", "PingFang SC", "Hiragino Sans", Arial, sans-serif;
+            padding: 2vw;
+            background: #f8f9fa;
+            color: #333;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+        }
+
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .test-section h2 {
+            color: #495057;
+            margin-top: 0;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .log-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .log-entry {
+            margin: 0.25rem 0;
+            padding: 0.25rem;
+            border-radius: 3px;
+        }
+
+        .log-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .log-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .log-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .log-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .input-group {
+            margin: 1rem 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🧪 功能测试工具</h1>
+
+        <div class="test-section">
+            <h2>🔐 登录测试</h2>
+            <p>测试授权码验证功能</p>
+            <div class="input-group">
+                <label for="testAuthCode">测试授权码:</label>
+                <input type="text" id="testAuthCode" placeholder="输入任意非空字符串" value="test_user">
+            </div>
+            <button class="btn btn-success" onclick="testLogin()">🔐 测试登录</button>
+            <button class="btn" onclick="testLogout()">🚪 测试退出</button>
+        </div>
+
+        <div class="test-section">
+            <h2>💾 数据存储测试</h2>
+            <p>测试本地存储功能</p>
+            <button class="btn" onclick="testSaveData()">💾 保存测试数据</button>
+            <button class="btn" onclick="testLoadData()">📂 加载测试数据</button>
+            <button class="btn" onclick="testClearData()">🗑️ 清空测试数据</button>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 兼容性测试</h2>
+            <p>测试cloudDB接口兼容性</p>
+            <button class="btn" onclick="testCloudDBCompatibility()">🔧 测试兼容性</button>
+            <button class="btn" onclick="testStorageManager()">📊 测试存储管理器</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 测试日志</h2>
+            <div id="logContainer" class="log-container">
+                <div class="log-entry log-info">测试工具已启动</div>
+            </div>
+            <button class="btn" onclick="clearLog()">🗑️ 清空日志</button>
+        </div>
+    </div>
+
+    <script>
+        let testLocalStorageManager = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            initTestTool();
+        });
+
+        // 初始化测试工具
+        function initTestTool() {
+            try {
+                if (typeof LocalStorageManager !== 'undefined') {
+                    testLocalStorageManager = new LocalStorageManager();
+                    log('本地存储管理器初始化成功', 'success');
+                } else {
+                    log('本地存储管理器未加载', 'error');
+                }
+            } catch (error) {
+                log('初始化失败: ' + error.message, 'error');
+            }
+        }
+
+        // 测试登录功能
+        function testLogin() {
+            const authCode = document.getElementById('testAuthCode').value.trim();
+            if (!authCode) {
+                log('请输入授权码', 'warning');
+                return;
+            }
+
+            try {
+                // 模拟登录过程
+                const currentUser = {
+                    userId: authCode,
+                    authCode: authCode,
+                    loginTime: new Date().toISOString()
+                };
+
+                // 保存用户信息
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                log('用户信息已保存: ' + authCode, 'success');
+
+                // 测试数据保存
+                const testData = [
+                    {
+                        title: '测试卡组',
+                        tags: ['测试'],
+                        factors: [],
+                        correctAnswers: {},
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                ];
+
+                // 保存测试数据
+                localStorage.setItem(`history_${authCode}`, JSON.stringify(testData));
+                log('测试数据已保存', 'success');
+
+                log('登录测试完成', 'success');
+            } catch (error) {
+                log('登录测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // 测试退出功能
+        function testLogout() {
+            try {
+                // 清除用户信息
+                localStorage.removeItem('currentUser');
+                log('用户信息已清除', 'success');
+
+                // 检查是否清除成功
+                const savedUser = localStorage.getItem('currentUser');
+                if (!savedUser) {
+                    log('退出登录测试成功', 'success');
+                } else {
+                    log('退出登录测试失败', 'error');
+                }
+            } catch (error) {
+                log('退出登录测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // 测试数据保存
+        function testSaveData() {
+            if (!testLocalStorageManager) {
+                log('本地存储管理器不可用', 'error');
+                return;
+            }
+
+            try {
+                const testUserId = 'test_user';
+                const testData = [
+                    {
+                        title: '测试卡组',
+                        tags: ['测试'],
+                        factors: [],
+                        correctAnswers: {},
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                ];
+
+                testLocalStorageManager.saveCardSets(testUserId, testData);
+                log('测试数据保存成功', 'success');
+            } catch (error) {
+                log('数据保存测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // 测试数据加载
+        function testLoadData() {
+            if (!testLocalStorageManager) {
+                log('本地存储管理器不可用', 'error');
+                return;
+            }
+
+            try {
+                const testUserId = 'test_user';
+                const data = testLocalStorageManager.getCardSets(testUserId);
+                log('测试数据加载成功: ' + data.length + ' 个卡组', 'success');
+            } catch (error) {
+                log('数据加载测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // 测试清空数据
+        function testClearData() {
+            if (!testLocalStorageManager) {
+                log('本地存储管理器不可用', 'error');
+                return;
+            }
+
+            try {
+                const success = testLocalStorageManager.clearAllData();
+                if (success) {
+                    log('测试数据清空成功', 'success');
+                } else {
+                    log('测试数据清空失败', 'error');
+                }
+            } catch (error) {
+                log('数据清空测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // 测试cloudDB兼容性
+        function testCloudDBCompatibility() {
+            try {
+                // 检查cloudDB接口是否存在
+                if (typeof cloudDB !== 'undefined') {
+                    log('cloudDB接口存在', 'success');
+
+                    // 测试基本方法
+                    const methods = ['saveUser', 'getUser', 'saveCardSets', 'getCardSets', 'saveHistoryTags', 'getHistoryTags'];
+                    methods.forEach(method => {
+                        if (typeof cloudDB[method] === 'function') {
+                            log(`✅ ${method} 方法可用`, 'success');
+                        } else {
+                            log(`❌ ${method} 方法不可用`, 'error');
+                        }
+                    });
+                } else {
+                    log('cloudDB接口不存在', 'error');
+                }
+            } catch (error) {
+                log('兼容性测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // 测试本地存储管理器
+        function testStorageManager() {
+            if (!testLocalStorageManager) {
+                log('本地存储管理器不可用', 'error');
+                return;
+            }
+
+            try {
+                const info = testLocalStorageManager.getStorageInfo();
+                log('存储信息获取成功', 'success');
+                log(`总大小: ${info.totalSizeFormatted}`, 'info');
+                log(`项目数量: ${info.itemCount}`, 'info');
+            } catch (error) {
+                log('存储管理器测试失败: ' + error.message, 'error');
+            }
+        }
+
+        // 清空日志
+        function clearLog() {
+            document.getElementById('logContainer').innerHTML = '';
+            log('日志已清空', 'info');
+        }
+
+        // 添加日志
+        function log(message, type = 'info') {
+            const container = document.getElementById('logContainer');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>
