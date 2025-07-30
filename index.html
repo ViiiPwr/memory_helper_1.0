@@ -1054,6 +1054,51 @@
       return arr;
     }
 
+    // 显示重复条目提示信息
+    function showDuplicateItemsHint() {
+      const matchingArea = document.getElementById("matchingArea");
+      if (!matchingArea) return;
+
+      // 检查是否已经有提示信息
+      const existingHint = matchingArea.querySelector('.duplicate-hint');
+      if (existingHint) return;
+
+      const hintDiv = document.createElement("div");
+      hintDiv.className = "duplicate-hint";
+      hintDiv.innerHTML = `
+        <div style="
+          background: #e3f2fd;
+          border: 1px solid #2196f3;
+          border-radius: 8px;
+          padding: 12px 16px;
+          margin-bottom: 16px;
+          color: #1976d2;
+          font-size: 14px;
+          line-height: 1.5;
+        ">
+          <div style="display: flex; align-items: center; margin-bottom: 8px;">
+            <span style="
+              background: #2196f3;
+              color: white;
+              border-radius: 50%;
+              width: 20px;
+              height: 20px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 12px;
+              margin-right: 8px;
+            ">💡</span>
+            <strong>提示</strong>
+          </div>
+          <p style="margin: 0;">该卡组存在多个分类下包含同一个条目，为了帮助更好地记忆，所有条目可以多次重复拖拽作答。</p>
+        </div>
+      `;
+
+      // 插入到答题区域的最前面
+      matchingArea.insertBefore(hintDiv, matchingArea.firstChild);
+    }
+
     // Toast 消息函数
     function showToast(message, type = 'info', duration = 3000) {
       const container = document.getElementById('toastContainer');
@@ -1222,6 +1267,11 @@
 
         // 保存是否有重复条目的标志
         window.hasDuplicateItems = hasDuplicateItems;
+
+        // 如果有重复条目，显示提示信息
+        if (hasDuplicateItems) {
+          showDuplicateItemsHint();
+        }
 
         const cardSetTitle =
           titleInput.value.trim() || `卡组${history.length + 1}`;
@@ -1451,6 +1501,11 @@
       const matchingArea = document.getElementById("matchingArea");
       matchingArea.innerHTML = "";
 
+      // 如果有重复条目，显示提示信息
+      if (window.hasDuplicateItems) {
+        showDuplicateItemsHint();
+      }
+
       const grid = document.createElement("div");
       grid.className = "grid";
       grid.id = "itemPool";
@@ -1504,6 +1559,8 @@
       matchingArea.appendChild(columns);
 
       document.getElementById("checkAnswers").style.display = "inline-block";
+      // 隐藏"再来一遍"按钮
+      document.getElementById("restartBtn").style.display = "none";
     }
 
     // 多栏分割逻辑
@@ -1727,23 +1784,21 @@
 
         // 根据是否有重复条目决定完成判断逻辑
         if (window.hasDuplicateItems) {
-          // 有重复条目：检查每个分组是否都有足够的正确条目
-          Object.keys(correctAnswers).forEach((groupName) => {
-            const groupItems = document.querySelectorAll(`.question:has(strong:contains("${groupName}")) .item`);
-            const correctItemsInGroup = Array.from(groupItems).filter(item =>
-              correctAnswers[groupName].includes(item.textContent)
-            ).length;
-
-            if (correctItemsInGroup < correctAnswers[groupName].length) {
-              allGroupsComplete = false;
-            }
-          });
+          // 有重复条目：只要点击检查答案就显示"再来一遍"按钮
+          allGroupsComplete = true;
         } else {
           // 无重复条目：检查itemPool是否为空
           if (itemPool && itemPool.children.length > 0) {
             allGroupsComplete = false;
           }
         }
+
+        // 调试信息
+        console.log('检查完成状态:', {
+          hasDuplicateItems: window.hasDuplicateItems,
+          allGroupsComplete: allGroupsComplete,
+          itemPoolChildren: itemPool ? itemPool.children.length : 'N/A'
+        });
 
         // 如果所有分组都完成，则锁定并显示"再来一遍"按钮
         if (allGroupsComplete) {
@@ -2102,6 +2157,11 @@
 
         // 保存是否有重复条目的标志
         window.hasDuplicateItems = hasDuplicateItems;
+
+        // 如果有重复条目，显示提示信息
+        if (hasDuplicateItems) {
+          showDuplicateItemsHint();
+        }
 
         history[index] = {
           title: title,
@@ -2638,6 +2698,11 @@
 
         // 保存是否有重复条目的标志
         window.hasDuplicateItems = hasDuplicateItems;
+
+        // 如果有重复条目，显示提示信息
+        if (hasDuplicateItems) {
+          showDuplicateItemsHint();
+        }
 
         const cardSetTitle = titleInput.value.trim() || `卡组${history.length + 1}`;
 

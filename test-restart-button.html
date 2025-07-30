@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>再来一遍按钮测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 5px;
+            background: #f0f0f0;
+            cursor: grab;
+            display: inline-block;
+        }
+
+        .dropzone {
+            border: 2px dashed #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            min-height: 50px;
+        }
+
+        .dropzone.over {
+            background: #e8f4fd;
+        }
+
+        .correct {
+            background-color: #27ae60 !important;
+            border-color: #27ae60 !important;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: #e74c3c !important;
+            border-color: #e74c3c !important;
+            color: white;
+        }
+
+        .locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .info {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        #restartBtn {
+            background: #e67e22;
+        }
+
+        #restartBtn:hover {
+            background: #d35400;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>再来一遍按钮功能测试</h1>
+
+    <div class="test-section">
+        <h2>测试说明</h2>
+        <div class="info">
+            <p><strong>测试步骤：</strong></p>
+            <ol>
+                <li>将所有条目拖拽到正确的分组</li>
+                <li>点击"检查答案"按钮</li>
+                <li>验证"再来一遍"按钮是否出现</li>
+                <li>点击"再来一遍"按钮测试功能</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>答题区域</h2>
+        <div id="itemPool"></div>
+        <div class="dropzone" data-group="A">
+            <strong>A分组：</strong>
+        </div>
+        <div class="dropzone" data-group="B">
+            <strong>B分组：</strong>
+        </div>
+        <button onclick="checkAnswers()">检查答案</button>
+        <button id="restartBtn" style="display: none;">再来一遍</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let correctAnswers = {
+            'A': ['1', '2'],
+            'B': ['3', '4']
+        };
+
+        // 初始化
+        function init() {
+            const items = ['1', '2', '3', '4'];
+            const itemPool = document.getElementById('itemPool');
+            itemPool.innerHTML = '';
+
+            items.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'item';
+                itemDiv.textContent = item;
+                itemDiv.dataset.text = item;
+                itemDiv.draggable = true;
+
+                const dragId = Date.now() + '_' + index + '_' + Math.random().toString(36).substr(2, 9);
+                itemDiv.dataset.dragId = dragId;
+
+                itemDiv.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                        text: item,
+                        group: null
+                    }));
+                    e.dataTransfer.setData('draggedItem', dragId);
+                });
+
+                itemPool.appendChild(itemDiv);
+            });
+        }
+
+        // 设置拖拽区域
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropzones = document.querySelectorAll('.dropzone');
+
+            dropzones.forEach(dropzone => {
+                dropzone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.add('over');
+                });
+
+                dropzone.addEventListener('dragleave', () => {
+                    dropzone.classList.remove('over');
+                });
+
+                dropzone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropzone.classList.remove('over');
+
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    const draggedItem = e.dataTransfer.getData('draggedItem');
+
+                    // 移除拖拽的条目
+                    if (draggedItem) {
+                        const itemToRemove = document.querySelector(`[data-drag-id="${draggedItem}"]`);
+                        if (itemToRemove) {
+                            itemToRemove.remove();
+                        }
+                    }
+
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'item';
+                    itemDiv.textContent = data.text;
+                    itemDiv.dataset.text = data.text;
+                    dropzone.appendChild(itemDiv);
+                });
+            });
+
+            // 初始化
+            init();
+        });
+
+        // 检查答案
+        function checkAnswers() {
+            const result = document.getElementById('result');
+            let resultHtml = '<h3>检查结果：</h3>';
+
+            // 重置所有item的颜色
+            document.querySelectorAll('.item').forEach(item => {
+                item.classList.remove('correct', 'incorrect');
+            });
+
+            let allCorrect = true;
+            let totalItems = 0;
+            let correctItems = 0;
+
+            Object.keys(correctAnswers).forEach(groupName => {
+                const groupItems = document.querySelectorAll(`[data-group="${groupName}"] .item`);
+                let groupCorrect = 0;
+
+                groupItems.forEach(item => {
+                    totalItems++;
+                    const isCorrect = correctAnswers[groupName].includes(item.textContent);
+
+                    if (isCorrect) {
+                        item.classList.add('correct');
+                        correctItems++;
+                        groupCorrect++;
+                    } else {
+                        item.classList.add('incorrect');
+                        allCorrect = false;
+                    }
+                });
+
+                resultHtml += `<p><strong>${groupName}分组：</strong>正确 ${groupCorrect}/${correctItems.length}</p>`;
+            });
+
+            result.innerHTML = resultHtml;
+
+            // 检查是否所有条目都已拖拽完成
+            const itemPool = document.getElementById('itemPool');
+            const remainingItems = itemPool.children.length;
+
+            if (remainingItems === 0 && allCorrect) {
+                // 锁定所有条目
+                document.querySelectorAll('.question .item').forEach(item => {
+                    item.draggable = false;
+                    item.classList.add('locked');
+                });
+                // 显示"再来一遍"按钮
+                document.getElementById("restartBtn").style.display = "inline-block";
+                result.innerHTML += '<p style="color: #27ae60;"><strong>✅ 完成！所有条目都正确放置。</strong></p>';
+            } else {
+                // 隐藏"再来一遍"按钮
+                document.getElementById("restartBtn").style.display = "none";
+            }
+        }
+
+        // 再来一遍按钮
+        document.getElementById("restartBtn").addEventListener("click", function () {
+            // 重新初始化
+            init();
+
+            // 清空所有分组
+            document.querySelectorAll('.dropzone').forEach(dropzone => {
+                dropzone.innerHTML = dropzone.querySelector('strong').outerHTML;
+            });
+
+            // 隐藏"再来一遍"按钮
+            document.getElementById("restartBtn").style.display = "none";
+
+            // 清空结果
+            document.getElementById("result").innerHTML = '';
+
+            alert('已重新开始！');
+        });
+    </script>
+</body>
+
+</html>

@@ -93,12 +93,58 @@
             <strong>B分组：</strong>
         </div>
         <button onclick="checkAnswers()">检查答案</button>
+        <button id="restartBtn" style="display: none;">再来一遍</button>
         <div id="result"></div>
     </div>
 
     <script>
         let currentTestData = null;
         let hasDuplicateItems = false;
+
+        // 显示重复条目提示信息
+        function showDuplicateHint() {
+            const testSection = document.querySelector('.test-section:last-child');
+            if (!testSection) return;
+
+            // 检查是否已经有提示信息
+            const existingHint = testSection.querySelector('.duplicate-hint');
+            if (existingHint) return;
+
+            const hintDiv = document.createElement("div");
+            hintDiv.className = "duplicate-hint";
+            hintDiv.innerHTML = `
+                <div style="
+                    background: #e3f2fd;
+                    border: 1px solid #2196f3;
+                    border-radius: 8px;
+                    padding: 12px 16px;
+                    margin-bottom: 16px;
+                    color: #1976d2;
+                    font-size: 14px;
+                    line-height: 1.5;
+                ">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <span style="
+                            background: #2196f3;
+                            color: white;
+                            border-radius: 50%;
+                            width: 20px;
+                            height: 20px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 12px;
+                            margin-right: 8px;
+                        ">💡</span>
+                        <strong>提示</strong>
+                    </div>
+                    <p style="margin: 0;">该卡组存在多个分类下包含同一个条目，为了帮助更好地记忆，所有条目可以多次重复拖拽作答。</p>
+                </div>
+            `;
+
+            // 插入到测试区域的最前面
+            testSection.insertBefore(hintDiv, testSection.firstChild);
+        }
 
         // 测试1: 有重复条目的卡组
         function testWithDuplicates() {
@@ -111,6 +157,9 @@
             // 展示唯一条目（取合集）
             const uniqueItems = ['1', '2', '3', '4'];
             renderItems(uniqueItems);
+
+            // 显示提示信息
+            showDuplicateHint();
 
             document.getElementById('test1-result').innerHTML = `
                 <div class="info">
@@ -264,7 +313,46 @@
             });
 
             result.innerHTML = resultHtml;
+
+            // 根据是否有重复条目决定是否显示"再来一遍"按钮
+            if (hasDuplicateItems) {
+                // 有重复条目：只要点击检查答案就显示"再来一遍"按钮
+                document.getElementById("restartBtn").style.display = "inline-block";
+            } else {
+                // 无重复条目：检查itemPool是否为空
+                const itemPool = document.getElementById('itemPool');
+                if (itemPool && itemPool.children.length === 0) {
+                    document.getElementById("restartBtn").style.display = "inline-block";
+                } else {
+                    document.getElementById("restartBtn").style.display = "none";
+                }
+            }
         }
+
+        // 再来一遍按钮事件
+        document.getElementById("restartBtn").addEventListener("click", function () {
+            // 重新渲染条目
+            if (hasDuplicateItems) {
+                const uniqueItems = ['1', '2', '3', '4'];
+                renderItems(uniqueItems);
+            } else {
+                const allItems = ['1', '2', '3', '4', '5', '6'];
+                renderItems(allItems);
+            }
+
+            // 清空所有分组
+            document.querySelectorAll('.dropzone').forEach(dropzone => {
+                dropzone.innerHTML = dropzone.querySelector('strong').outerHTML;
+            });
+
+            // 隐藏"再来一遍"按钮
+            document.getElementById("restartBtn").style.display = "none";
+
+            // 清空结果
+            document.getElementById("result").innerHTML = '';
+
+            alert('已重新开始！');
+        });
     </script>
 </body>
 
