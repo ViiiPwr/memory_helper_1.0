@@ -34,6 +34,7 @@ class LicenseDistributor {
         this.saveDistributedLicenses();
         
         console.log(`✅ 授权码已分发: ${licenseCode}`);
+        console.log('当前分发记录:', this.distributedLicenses);
         return true;
     }
 
@@ -41,6 +42,7 @@ class LicenseDistributor {
     saveDistributedLicenses() {
         try {
             localStorage.setItem(this.distributionKey, JSON.stringify(this.distributedLicenses));
+            console.log('分发记录已保存到localStorage:', this.distributionKey);
         } catch (error) {
             console.error('保存分发记录失败:', error);
         }

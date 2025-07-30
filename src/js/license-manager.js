@@ -45,12 +45,15 @@ class LicenseManager {
             const distributed = localStorage.getItem('pairing_license_distribution');
             if (distributed) {
                 const distributedLicenses = JSON.parse(distributed);
+                console.log('从localStorage加载分发记录:', distributedLicenses);
                 distributedLicenses.forEach(license => {
                     if (license.status === 'active') {
                         this.validLicenses.add(license.code);
                         console.log('加载分发授权码:', license.code);
                     }
                 });
+            } else {
+                console.log('没有找到分发记录');
             }
         } catch (error) {
             console.error('加载分发授权码失败:', error);
