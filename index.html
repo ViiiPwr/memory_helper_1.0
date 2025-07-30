@@ -785,7 +785,7 @@
     async function initUserSystem() {
       // 加载授权码分发记录
       licenseManager.loadDistributedLicenses();
-      
+
       // 检查是否已登录
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
