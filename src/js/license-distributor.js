@@ -22,8 +22,10 @@ class LicenseDistributor {
 
     // 分发新授权码（管理员操作）
     distributeLicense(licenseCode, licenseType, customerInfo = {}) {
+        // 确保授权码以大写形式存储
+        const upperCode = licenseCode.toUpperCase();
         const licenseData = {
-            code: licenseCode,
+            code: upperCode,
             type: licenseType,
             distributedAt: new Date().toISOString(),
             customerInfo: customerInfo,
@@ -33,7 +35,7 @@ class LicenseDistributor {
         this.distributedLicenses.push(licenseData);
         this.saveDistributedLicenses();
         
-        console.log(`✅ 授权码已分发: ${licenseCode}`);
+        console.log(`✅ 授权码已分发: ${upperCode}`);
         console.log('当前分发记录:', this.distributedLicenses);
         return true;
     }

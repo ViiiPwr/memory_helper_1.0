@@ -48,8 +48,10 @@ class LicenseManager {
                 console.log('从localStorage加载分发记录:', distributedLicenses);
                 distributedLicenses.forEach(license => {
                     if (license.status === 'active') {
-                        this.validLicenses.add(license.code);
-                        console.log('加载分发授权码:', license.code);
+                        // 确保授权码以大写形式存储，与验证时保持一致
+                        const upperCode = license.code.toUpperCase();
+                        this.validLicenses.add(upperCode);
+                        console.log('加载分发授权码:', upperCode);
                     }
                 });
             } else {
