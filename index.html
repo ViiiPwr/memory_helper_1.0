@@ -7,10 +7,8 @@
 
   <!-- 本地存储管理器 -->
   <script src="src/js/local-storage.js"></script>
-  <!-- 授权码管理器 -->
-  <script src="src/js/license-manager.js"></script>
-  <!-- 授权码分发系统 -->
-  <script src="src/js/license-distributor.js"></script>
+  <!-- 授权码管理器 V2 -->
+  <script src="src/js/license-manager-v2.js"></script>
 
   <!-- 云托管环境下的云开发初始化 -->
   <script>
@@ -783,8 +781,8 @@
     // 用户数据管理
     // 初始化用户系统
     async function initUserSystem() {
-      // 加载授权码分发记录
-      licenseManager.loadDistributedLicenses();
+      // 初始化授权码系统
+      console.log('授权码系统初始化完成');
 
       // 检查是否已登录
       const savedUser = localStorage.getItem('currentUser');
@@ -834,7 +832,7 @@
         adminBtn.style.color = '#e74c3c';
         adminBtn.textContent = '🔑 授权码管理';
         adminBtn.addEventListener('click', function () {
-          window.open('src/pages/license-manager.html', '_blank');
+          window.open('src/pages/license-manager-v2.html', '_blank');
         });
 
         // 插入到帮助按钮后面
@@ -854,11 +852,11 @@
       licenseManager.loadDistributedLicenses();
 
       // 使用授权码管理器验证
-      const validationResult = licenseManager.validateLicense(code.trim());
+      const validationResult = licenseManagerV2.validateLicense(code.trim());
 
       if (validationResult.valid) {
         // 获取授权码信息
-        const licenseInfo = licenseManager.getLicenseInfo(code.trim());
+        const licenseInfo = licenseManagerV2.getLicenseInfo(code.trim());
 
         // 设置用户信息
         currentUser = {
@@ -1005,8 +1003,8 @@
           history = [];
           historyTags = [];
 
-          // 重新加载授权码，确保新分发的授权码可用
-          licenseManager.loadDistributedLicenses();
+          // 标记授权码为已使用
+          licenseManagerV2.markAsUsed(currentUser.authCode);
 
           // 渲染空界面
           renderHistory();
