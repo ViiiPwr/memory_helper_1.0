@@ -48,6 +48,7 @@ class LicenseManager {
                 distributedLicenses.forEach(license => {
                     if (license.status === 'active') {
                         this.validLicenses.add(license.code);
+                        console.log('加载分发授权码:', license.code);
                     }
                 });
             }
@@ -60,8 +61,13 @@ class LicenseManager {
     validateLicense(licenseCode) {
         const trimmedCode = licenseCode.trim().toUpperCase();
         
+        console.log('验证授权码:', trimmedCode);
+        console.log('当前有效授权码数量:', this.validLicenses.size);
+        console.log('有效授权码列表:', Array.from(this.validLicenses));
+        
         // 检查格式
         if (!this.isValidFormat(trimmedCode)) {
+            console.log('格式检查失败');
             return {
                 valid: false,
                 message: '授权码格式不正确',
@@ -71,6 +77,7 @@ class LicenseManager {
 
         // 检查是否在有效列表中
         if (this.validLicenses.has(trimmedCode)) {
+            console.log('授权码验证成功');
             return {
                 valid: true,
                 message: '授权码验证成功',
@@ -81,6 +88,7 @@ class LicenseManager {
 
         // 检查是否是免费试用码
         if (this.isTrialCode(trimmedCode)) {
+            console.log('试用码验证成功');
             return {
                 valid: true,
                 message: '试用授权码验证成功',
@@ -91,6 +99,7 @@ class LicenseManager {
 
         // 检查是否是管理员码
         if (this.isAdminCode(trimmedCode)) {
+            console.log('管理员码验证成功');
             return {
                 valid: true,
                 message: '管理员授权码验证成功',
@@ -99,6 +108,7 @@ class LicenseManager {
             };
         }
 
+        console.log('授权码验证失败');
         return {
             valid: false,
             message: '授权码无效或已过期',
