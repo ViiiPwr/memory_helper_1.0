@@ -32,8 +32,7 @@
     "files": [
       "main.js",
       "index.html",
-      "local-storage.js",
-      "data-manager.html",
+      "src/**/*",
       "node_modules/**/*"
     ],
     "mac": {
