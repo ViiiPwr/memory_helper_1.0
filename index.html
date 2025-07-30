@@ -641,7 +641,6 @@
     </div>
     <div style="display: flex; align-items: center; gap: 12px;">
       <button id="helpBtn" class="text-btn" type="button">使用教程</button>
-      <button id="licenseBtn" class="text-btn" type="button" style="color: #e74c3c;">🔑 授权码管理</button>
       <button id="logoutBtn" style="
         background: #95a5a6;
         color: white;
@@ -815,6 +814,22 @@
       document.querySelector('h1').style.display = 'block';
       document.querySelector('.section').style.display = 'block';
       document.getElementById('currentUserId').textContent = currentUser.userId;
+      
+      // 如果是管理员，显示管理按钮
+      if (currentUser.isAdmin) {
+        const adminBtn = document.createElement('button');
+        adminBtn.id = 'licenseBtn';
+        adminBtn.className = 'text-btn';
+        adminBtn.style.color = '#e74c3c';
+        adminBtn.textContent = '🔑 授权码管理';
+        adminBtn.addEventListener('click', function() {
+          window.open('src/pages/license-manager.html', '_blank');
+        });
+        
+        // 插入到帮助按钮后面
+        const helpBtn = document.getElementById('helpBtn');
+        helpBtn.parentNode.insertBefore(adminBtn, helpBtn.nextSibling);
+      }
     }
 
     // 验证授权码（集成授权码验证）
@@ -826,11 +841,11 @@
 
       // 使用授权码管理器验证
       const validationResult = licenseManager.validateLicense(code.trim());
-      
+
       if (validationResult.valid) {
         // 获取授权码信息
         const licenseInfo = licenseManager.getLicenseInfo(code.trim());
-        
+
         // 设置用户信息
         currentUser = {
           userId: code.trim(),
@@ -839,6 +854,12 @@
           licenseName: licenseInfo.name,
           loginTime: new Date().toISOString()
         };
+
+        // 检查是否是管理员授权码
+        const isAdmin = code.trim().startsWith('PAIRING_ADMIN_');
+        if (isAdmin) {
+          currentUser.isAdmin = true;
+        }
 
         try {
           // 保存用户信息到本地存储
@@ -2084,11 +2105,11 @@
     // 退出登录按钮事件
     document.getElementById('logoutBtn').addEventListener('click', logout);
 
-    // 授权码管理按钮事件
-    document.getElementById('licenseBtn').addEventListener('click', function() {
-      // 打开授权码管理页面
-      window.open('src/pages/license-manager.html', '_blank');
-    });
+    // 授权码管理按钮事件（仅开发者模式）
+    // document.getElementById('licenseBtn').addEventListener('click', function () {
+    //   // 打开授权码管理页面
+    //   window.open('src/pages/license-manager.html', '_blank');
+    // });
 
     // 帮助按钮和tooltip逻辑
     document.addEventListener('DOMContentLoaded', function () {

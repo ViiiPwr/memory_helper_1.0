@@ -14,7 +14,8 @@ class LicenseManager {
             'PAIRING_TEST_002', 
             'PAIRING_DEMO_001',
             'PAIRING_FREE_001',
-            'PAIRING_PREMIUM_001'
+            'PAIRING_PREMIUM_001',
+            'PAIRING_ADMIN_001'  // 管理员授权码
         ];
         
         testLicenses.forEach(license => {
@@ -68,6 +69,16 @@ class LicenseManager {
             };
         }
 
+        // 检查是否是管理员码
+        if (this.isAdminCode(trimmedCode)) {
+            return {
+                valid: true,
+                message: '管理员授权码验证成功',
+                type: 'admin',
+                license: trimmedCode
+            };
+        }
+
         return {
             valid: false,
             message: '授权码无效或已过期',
@@ -87,6 +98,11 @@ class LicenseManager {
         return code.startsWith('PAIRING_TRIAL_') || 
                code.startsWith('PAIRING_DEMO_') ||
                code.startsWith('PAIRING_FREE_');
+    }
+
+    // 检查是否是管理员码
+    isAdminCode(code) {
+        return code.startsWith('PAIRING_ADMIN_');
     }
 
     // 添加新的授权码
@@ -133,6 +149,13 @@ class LicenseManager {
                 features: ['基础功能'],
                 validUntil: '永久有效'
             };
+        } else if (trimmedCode.startsWith('PAIRING_ADMIN_')) {
+            return {
+                type: 'admin',
+                name: '管理员版',
+                features: ['所有功能', '授权码管理', '系统管理'],
+                validUntil: '永久有效'
+            };
         }
         
         return {
@@ -155,6 +178,8 @@ class LicenseManager {
                 return `PAIRING_TRIAL_${timestamp}_${random}`;
             case 'free':
                 return `PAIRING_FREE_${timestamp}_${random}`;
+            case 'admin':
+                return `PAIRING_ADMIN_${timestamp}_${random}`;
             default:
                 return `PAIRING_STD_${timestamp}_${random}`;
         }
