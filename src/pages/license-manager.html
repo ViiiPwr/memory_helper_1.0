@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>授权码管理 - 配对题生成器</title>
+    <script src="../js/license-manager.js"></script>
+    <style>
+        body {
+            font-family: "Segoe UI", "PingFang SC", "Hiragino Sans", Arial, sans-serif;
+            padding: 2vw;
+            background: #f8f9fa;
+            color: #333;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .section h2 {
+            color: #495057;
+            margin-top: 0;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+        }
+
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .input-group {
+            margin: 1rem 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .license-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .license-info {
+            flex: 1;
+        }
+
+        .license-type {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .license-code {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 0.25rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.9rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 0.25rem 0;
+            color: #666;
+        }
+
+        .feature-list li:before {
+            content: "✓ ";
+            color: #27ae60;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔑 授权码管理系统</h1>
+
+        <!-- 统计信息 -->
+        <div class="section">
+            <h2>📊 授权码统计</h2>
+            <div class="stats-grid" id="statsGrid">
+                <!-- 统计信息将在这里显示 -->
+            </div>
+        </div>
+
+        <!-- 验证授权码 -->
+        <div class="section">
+            <h2>🔍 验证授权码</h2>
+            <div class="input-group">
+                <label for="licenseInput">输入授权码：</label>
+                <input type="text" id="licenseInput" placeholder="例如：PAIRING_PREMIUM_XXXXX" />
+            </div>
+            <button class="btn" onclick="validateLicense()">验证授权码</button>
+            <div id="validationResult"></div>
+        </div>
+
+        <!-- 添加授权码 -->
+        <div class="section">
+            <h2>➕ 添加授权码</h2>
+            <div class="input-group">
+                <label for="newLicenseInput">新授权码：</label>
+                <input type="text" id="newLicenseInput" placeholder="输入新的授权码" />
+            </div>
+            <button class="btn btn-success" onclick="addLicense()">添加授权码</button>
+            <button class="btn btn-warning" onclick="generateTestLicense()">生成测试授权码</button>
+        </div>
+
+        <!-- 授权码列表 -->
+        <div class="section">
+            <h2>📋 有效授权码列表</h2>
+            <button class="btn" onclick="refreshLicenseList()">刷新列表</button>
+            <div id="licenseList">
+                <!-- 授权码列表将在这里显示 -->
+            </div>
+        </div>
+
+        <!-- 授权码类型说明 -->
+        <div class="section">
+            <h2>📖 授权码类型说明</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                <div style="background: white; padding: 1rem; border-radius: 6px; border: 1px solid #ddd;">
+                    <h3 style="color: #e74c3c; margin-top: 0;">高级版 (PAIRING_PREMIUM_)</h3>
+                    <ul class="feature-list">
+                        <li>无限卡组创建</li>
+                        <li>数据导出功能</li>
+                        <li>高级统计功能</li>
+                        <li>优先技术支持</li>
+                    </ul>
+                </div>
+                <div style="background: white; padding: 1rem; border-radius: 6px; border: 1px solid #ddd;">
+                    <h3 style="color: #f39c12; margin-top: 0;">试用版 (PAIRING_TRIAL_)</h3>
+                    <ul class="feature-list">
+                        <li>30天试用期</li>
+                        <li>基础功能使用</li>
+                        <li>最多10个卡组</li>
+                        <li>基础数据导出</li>
+                    </ul>
+                </div>
+                <div style="background: white; padding: 1rem; border-radius: 6px; border: 1px solid #ddd;">
+                    <h3 style="color: #27ae60; margin-top: 0;">免费版 (PAIRING_FREE_)</h3>
+                    <ul class="feature-list">
+                        <li>基础功能使用</li>
+                        <li>最多5个卡组</li>
+                        <li>基础数据保存</li>
+                        <li>社区支持</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStats();
+            refreshLicenseList();
+        });
+
+        // 验证授权码
+        function validateLicense() {
+            const licenseInput = document.getElementById('licenseInput');
+            const resultDiv = document.getElementById('validationResult');
+            const licenseCode = licenseInput.value.trim();
+
+            if (!licenseCode) {
+                resultDiv.innerHTML = '<div class="alert alert-error">请输入授权码</div>';
+                return;
+            }
+
+            const result = licenseManager.validateLicense(licenseCode);
+            
+            if (result.valid) {
+                const licenseInfo = licenseManager.getLicenseInfo(licenseCode);
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>✅ ${result.message}</strong><br>
+                        类型: ${licenseInfo.name}<br>
+                        有效期: ${licenseInfo.validUntil}<br>
+                        功能: ${licenseInfo.features.join(', ')}
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-error">
+                        <strong>❌ ${result.message}</strong>
+                    </div>
+                `;
+            }
+        }
+
+        // 添加授权码
+        function addLicense() {
+            const licenseInput = document.getElementById('newLicenseInput');
+            const licenseCode = licenseInput.value.trim();
+
+            if (!licenseCode) {
+                alert('请输入授权码');
+                return;
+            }
+
+            if (licenseManager.addLicense(licenseCode)) {
+                alert('✅ 授权码添加成功');
+                licenseInput.value = '';
+                refreshStats();
+                refreshLicenseList();
+            } else {
+                alert('❌ 授权码格式不正确');
+            }
+        }
+
+        // 生成测试授权码
+        function generateTestLicense() {
+            const types = ['premium', 'trial', 'free', 'standard'];
+            const randomType = types[Math.floor(Math.random() * types.length)];
+            const licenseCode = licenseManager.generateLicense(randomType);
+            
+            document.getElementById('newLicenseInput').value = licenseCode;
+            alert(`生成的测试授权码: ${licenseCode}\n类型: ${randomType}`);
+        }
+
+        // 刷新统计信息
+        function refreshStats() {
+            const stats = licenseManager.getStats();
+            const statsGrid = document.getElementById('statsGrid');
+            
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${stats.total}</div>
+                    <div class="stat-label">总授权码</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.premium}</div>
+                    <div class="stat-label">高级版</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.trial}</div>
+                    <div class="stat-label">试用版</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${stats.free}</div>
+                    <div class="stat-label">免费版</div>
+                </div>
+            `;
+        }
+
+        // 刷新授权码列表
+        function refreshLicenseList() {
+            const licenseList = document.getElementById('licenseList');
+            const licenses = Array.from(licenseManager.validLicenses);
+            
+            if (licenses.length === 0) {
+                licenseList.innerHTML = '<div class="alert alert-warning">暂无授权码</div>';
+                return;
+            }
+
+            licenseList.innerHTML = licenses.map(license => {
+                const licenseInfo = licenseManager.getLicenseInfo(license);
+                return `
+                    <div class="license-card">
+                        <div class="license-info">
+                            <div class="license-type">${licenseInfo.name}</div>
+                            <div class="license-code">${license}</div>
+                            <div style="color: #666; font-size: 0.9rem;">
+                                有效期: ${licenseInfo.validUntil}
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-danger" onclick="removeLicense('${license}')">删除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 删除授权码
+        function removeLicense(licenseCode) {
+            if (confirm(`确定要删除授权码 ${licenseCode} 吗？`)) {
+                licenseManager.validLicenses.delete(licenseCode);
+                licenseManager.saveUserLicenses();
+                refreshStats();
+                refreshLicenseList();
+                alert('授权码已删除');
+            }
+        }
+
+        // 回车键验证授权码
+        document.getElementById('licenseInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                validateLicense();
+            }
+        });
+
+        document.getElementById('newLicenseInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addLicense();
+            }
+        });
+    </script>
+</body>
+
+</html> 

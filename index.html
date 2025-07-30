@@ -7,6 +7,8 @@
 
   <!-- 本地存储管理器 -->
   <script src="src/js/local-storage.js"></script>
+  <!-- 授权码管理器 -->
+  <script src="src/js/license-manager.js"></script>
 
   <!-- 云托管环境下的云开发初始化 -->
   <script>
@@ -639,6 +641,7 @@
     </div>
     <div style="display: flex; align-items: center; gap: 12px;">
       <button id="helpBtn" class="text-btn" type="button">使用教程</button>
+      <button id="licenseBtn" class="text-btn" type="button" style="color: #e74c3c;">🔑 授权码管理</button>
       <button id="logoutBtn" style="
         background: #95a5a6;
         color: white;
@@ -814,15 +817,26 @@
       document.getElementById('currentUserId').textContent = currentUser.userId;
     }
 
-    // 验证授权码（本地存储版本）
+    // 验证授权码（集成授权码验证）
     async function validateAuthCode(code) {
-      // 验证：任何非空输入都成功
-      if (code && code.trim()) {
-        // 授权码就是userId
-        const userId = code.trim();
+      if (!code || !code.trim()) {
+        showToast('请输入授权码', 'error');
+        return false;
+      }
+
+      // 使用授权码管理器验证
+      const validationResult = licenseManager.validateLicense(code.trim());
+      
+      if (validationResult.valid) {
+        // 获取授权码信息
+        const licenseInfo = licenseManager.getLicenseInfo(code.trim());
+        
+        // 设置用户信息
         currentUser = {
-          userId: userId,
-          authCode: code,
+          userId: code.trim(),
+          authCode: code.trim(),
+          licenseType: licenseInfo.type,
+          licenseName: licenseInfo.name,
           loginTime: new Date().toISOString()
         };
 
@@ -847,10 +861,12 @@
           migrateDataToCloud();
         }, 1000);
 
-        showToast('授权成功！欢迎使用配对题生成器', 'success');
+        showToast(`授权成功！${licenseInfo.name} - ${licenseInfo.features.join(', ')}`, 'success');
         return true;
+      } else {
+        showToast(validationResult.message, 'error');
+        return false;
       }
-      return false;
     }
 
     // 初始化用户数据
@@ -2067,6 +2083,12 @@
 
     // 退出登录按钮事件
     document.getElementById('logoutBtn').addEventListener('click', logout);
+
+    // 授权码管理按钮事件
+    document.getElementById('licenseBtn').addEventListener('click', function() {
+      // 打开授权码管理页面
+      window.open('src/pages/license-manager.html', '_blank');
+    });
 
     // 帮助按钮和tooltip逻辑
     document.addEventListener('DOMContentLoaded', function () {
