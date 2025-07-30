@@ -5,7 +5,7 @@ class LicenseManagerV2 {
         this.predefinedLicenses = new Map(); // 预置的授权码池
         this.usedLicenses = new Set(); // 已使用的授权码
         this.distributedLicenses = new Map(); // 分发记录
-        
+
         this.initPredefinedLicenses();
         this.loadUsedLicenses();
         this.loadDistributionRecords();
@@ -14,7 +14,7 @@ class LicenseManagerV2 {
     // 初始化预置授权码池（100000个）
     initPredefinedLicenses() {
         console.log('正在初始化预置授权码池...');
-        
+
         // 生成100000个预置授权码
         for (let i = 1; i <= 100000; i++) {
             const licenseCode = this.generateLicenseCode(i);
@@ -28,9 +28,9 @@ class LicenseManagerV2 {
                 customerInfo: null
             });
         }
-        
+
         console.log(`预置授权码池初始化完成，共 ${this.predefinedLicenses.size} 个授权码`);
-        
+
         // 调试：显示前几个授权码
         console.log('前5个授权码示例:');
         for (let i = 1; i <= 5; i++) {
@@ -54,21 +54,21 @@ class LicenseManagerV2 {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let result = '';
         let currentSeed = seed;
-        
+
         for (let i = 0; i < length; i++) {
             currentSeed = (currentSeed * 9301 + 49297) % 233280;
             result += chars[currentSeed % chars.length];
         }
-        
+
         return result;
     }
 
     // 验证授权码
     validateLicense(licenseCode) {
         const trimmedCode = licenseCode.trim().toUpperCase();
-        
+
         console.log('验证授权码:', trimmedCode);
-        
+
         // 检查格式
         if (!this.isValidFormat(trimmedCode)) {
             return {
@@ -88,7 +88,7 @@ class LicenseManagerV2 {
         }
 
         const licenseInfo = this.predefinedLicenses.get(trimmedCode);
-        
+
         // 检查是否已被使用
         if (licenseInfo.status === 'used') {
             return {
@@ -120,7 +120,7 @@ class LicenseManagerV2 {
     // 分发授权码
     distributeLicense(licenseCode, customerInfo = {}) {
         const trimmedCode = licenseCode.trim().toUpperCase();
-        
+
         // 检查授权码是否存在
         if (!this.predefinedLicenses.has(trimmedCode)) {
             return {
@@ -130,7 +130,7 @@ class LicenseManagerV2 {
         }
 
         const licenseInfo = this.predefinedLicenses.get(trimmedCode);
-        
+
         // 检查是否已被使用
         if (licenseInfo.status === 'used') {
             return {
@@ -157,7 +157,7 @@ class LicenseManagerV2 {
         this.saveDistributionRecords();
 
         console.log(`授权码分发成功: ${trimmedCode}`);
-        
+
         return {
             success: true,
             message: '授权码分发成功',
@@ -168,7 +168,7 @@ class LicenseManagerV2 {
     // 标记授权码为已使用
     markAsUsed(licenseCode) {
         const trimmedCode = licenseCode.trim().toUpperCase();
-        
+
         if (!this.predefinedLicenses.has(trimmedCode)) {
             return {
                 success: false,
@@ -177,7 +177,7 @@ class LicenseManagerV2 {
         }
 
         const licenseInfo = this.predefinedLicenses.get(trimmedCode);
-        
+
         if (licenseInfo.status === 'used') {
             return {
                 success: false,
@@ -188,13 +188,13 @@ class LicenseManagerV2 {
         // 更新状态
         licenseInfo.status = 'used';
         licenseInfo.usedAt = new Date().toISOString();
-        
+
         // 添加到已使用列表
         this.usedLicenses.add(trimmedCode);
         this.saveUsedLicenses();
 
         console.log(`授权码标记为已使用: ${trimmedCode}`);
-        
+
         return {
             success: true,
             message: '授权码已标记为使用',
@@ -205,7 +205,7 @@ class LicenseManagerV2 {
     // 获取授权码信息
     getLicenseInfo(licenseCode) {
         const trimmedCode = licenseCode.trim().toUpperCase();
-        
+
         if (trimmedCode.startsWith('PAIRING_ADMIN_')) {
             return {
                 type: 'admin',
@@ -214,7 +214,7 @@ class LicenseManagerV2 {
                 validUntil: '永久有效'
             };
         }
-        
+
         return {
             type: 'premium',
             name: '高级版',
@@ -246,7 +246,7 @@ class LicenseManagerV2 {
 
         const start = (page - 1) * pageSize;
         const end = start + pageSize;
-        
+
         return {
             licenses: availableLicenses.slice(start, end),
             total: availableLicenses.length,
@@ -270,15 +270,15 @@ class LicenseManagerV2 {
     searchLicenses(query) {
         const results = [];
         const searchTerm = query.toLowerCase();
-        
+
         for (const [code, info] of this.predefinedLicenses) {
-            if (code.toLowerCase().includes(searchTerm) || 
-                (info.customerInfo && info.customerInfo.customer && 
-                 info.customerInfo.customer.toLowerCase().includes(searchTerm))) {
+            if (code.toLowerCase().includes(searchTerm) ||
+                (info.customerInfo && info.customerInfo.customer &&
+                    info.customerInfo.customer.toLowerCase().includes(searchTerm))) {
                 results.push(info);
             }
         }
-        
+
         return results;
     }
 
@@ -304,7 +304,7 @@ class LicenseManagerV2 {
             if (usedLicenses) {
                 const usedArray = JSON.parse(usedLicenses);
                 this.usedLicenses = new Set(usedArray);
-                
+
                 // 更新预置授权码状态
                 for (const code of this.usedLicenses) {
                     if (this.predefinedLicenses.has(code)) {
@@ -335,10 +335,10 @@ class LicenseManagerV2 {
             if (records) {
                 const recordsArray = JSON.parse(records);
                 this.distributedLicenses = new Map();
-                
+
                 for (const record of recordsArray) {
                     this.distributedLicenses.set(record.code, record);
-                    
+
                     // 更新预置授权码状态
                     if (this.predefinedLicenses.has(record.code)) {
                         this.predefinedLicenses.get(record.code).status = 'distributed';
@@ -366,7 +366,7 @@ class LicenseManagerV2 {
     resetSystem() {
         this.usedLicenses.clear();
         this.distributedLicenses.clear();
-        
+
         // 重置所有预置授权码状态
         for (const license of this.predefinedLicenses.values()) {
             license.status = 'available';
@@ -374,10 +374,10 @@ class LicenseManagerV2 {
             license.distributedAt = null;
             license.customerInfo = null;
         }
-        
+
         this.saveUsedLicenses();
         this.saveDistributionRecords();
-        
+
         console.log('授权码系统已重置');
     }
 }

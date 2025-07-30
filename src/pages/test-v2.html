@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>授权码系统 V2 测试 - 配对题生成器</title>
+    <script src="../js/license-manager-v2.js"></script>
+    <style>
+        body {
+            font-family: "Segoe UI", "PingFang SC", "Hiragino Sans", Arial, sans-serif;
+            padding: 2vw;
+            background: #f8f9fa;
+            color: #333;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 2rem;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .input-group {
+            margin: 1rem 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .license-code {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .test-result {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 授权码系统 V2 测试</h1>
+
+        <!-- 系统状态 -->
+        <div class="section">
+            <h2>📊 系统状态</h2>
+            <button class="btn" onclick="showSystemStatus()">显示系统状态</button>
+            <div id="systemStatus"></div>
+        </div>
+
+        <!-- 测试授权码生成 -->
+        <div class="section">
+            <h2>🔑 测试授权码生成</h2>
+            <button class="btn" onclick="testLicenseGeneration()">生成测试授权码</button>
+            <div id="generationResult"></div>
+        </div>
+
+        <!-- 测试授权码验证 -->
+        <div class="section">
+            <h2>✅ 测试授权码验证</h2>
+            <div class="input-group">
+                <label for="testLicenseInput">输入授权码：</label>
+                <input type="text" id="testLicenseInput" placeholder="输入要测试的授权码" />
+            </div>
+            <button class="btn" onclick="testLicenseValidation()">验证授权码</button>
+            <div id="validationResult"></div>
+        </div>
+
+        <!-- 测试分发功能 -->
+        <div class="section">
+            <h2>📤 测试分发功能</h2>
+            <div class="input-group">
+                <label for="distributeInput">授权码：</label>
+                <input type="text" id="distributeInput" placeholder="输入要分发的授权码" />
+            </div>
+            <div class="input-group">
+                <label for="customerInput">客户信息：</label>
+                <input type="text" id="customerInput" placeholder="客户姓名" />
+            </div>
+            <button class="btn btn-success" onclick="testDistribution()">测试分发</button>
+            <div id="distributionResult"></div>
+        </div>
+
+        <!-- 测试标记使用 -->
+        <div class="section">
+            <h2>✅ 测试标记使用</h2>
+            <div class="input-group">
+                <label for="markUsedInput">授权码：</label>
+                <input type="text" id="markUsedInput" placeholder="输入要标记为已使用的授权码" />
+            </div>
+            <button class="btn btn-success" onclick="testMarkAsUsed()">标记为已使用</button>
+            <div id="markUsedResult"></div>
+        </div>
+
+        <!-- 完整流程测试 -->
+        <div class="section">
+            <h2>🔄 完整流程测试</h2>
+            <button class="btn" onclick="testFullFlow()">运行完整流程测试</button>
+            <div id="fullFlowResult"></div>
+        </div>
+    </div>
+
+    <script>
+        // 显示系统状态
+        function showSystemStatus() {
+            const stats = licenseManagerV2.getStats();
+            const statusDiv = document.getElementById('systemStatus');
+            
+            statusDiv.innerHTML = `
+                <div class="test-result">
+                    <h3>系统统计</h3>
+                    <p><strong>总授权码:</strong> ${stats.total.toLocaleString()}</p>
+                    <p><strong>可用授权码:</strong> ${stats.available.toLocaleString()}</p>
+                    <p><strong>已分发:</strong> ${stats.distributed.toLocaleString()}</p>
+                    <p><strong>已使用:</strong> ${stats.used.toLocaleString()}</p>
+                </div>
+            `;
+        }
+
+        // 测试授权码生成
+        function testLicenseGeneration() {
+            const resultDiv = document.getElementById('generationResult');
+            
+            // 生成前5个授权码
+            let result = '<div class="test-result"><h3>生成的授权码</h3>';
+            for (let i = 1; i <= 5; i++) {
+                const code = licenseManagerV2.generateLicenseCode(i);
+                result += `<p><span class="license-code">${code}</span></p>`;
+            }
+            result += '</div>';
+            
+            resultDiv.innerHTML = result;
+        }
+
+        // 测试授权码验证
+        function testLicenseValidation() {
+            const input = document.getElementById('testLicenseInput').value.trim();
+            const resultDiv = document.getElementById('validationResult');
+            
+            if (!input) {
+                resultDiv.innerHTML = '<div class="alert alert-error">请输入授权码</div>';
+                return;
+            }
+
+            const result = licenseManagerV2.validateLicense(input);
+            
+            if (result.valid) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>✅ 验证成功</strong><br>
+                        授权码: <span class="license-code">${input}</span><br>
+                        类型: ${result.type}<br>
+                        消息: ${result.message}
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-error">
+                        <strong>❌ 验证失败</strong><br>
+                        授权码: <span class="license-code">${input}</span><br>
+                        错误: ${result.message}<br>
+                        类型: ${result.type}
+                    </div>
+                `;
+            }
+        }
+
+        // 测试分发功能
+        function testDistribution() {
+            const licenseCode = document.getElementById('distributeInput').value.trim();
+            const customerInfo = document.getElementById('customerInput').value.trim();
+            const resultDiv = document.getElementById('distributionResult');
+            
+            if (!licenseCode) {
+                resultDiv.innerHTML = '<div class="alert alert-error">请输入授权码</div>';
+                return;
+            }
+
+            const customerData = customerInfo ? { customer: customerInfo } : {};
+            const result = licenseManagerV2.distributeLicense(licenseCode, customerData);
+            
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>✅ 分发成功</strong><br>
+                        授权码: <span class="license-code">${result.licenseInfo.code}</span><br>
+                        客户: ${customerInfo || '未指定'}<br>
+                        分发时间: ${new Date(result.licenseInfo.distributedAt).toLocaleString()}
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-error">
+                        <strong>❌ 分发失败</strong><br>
+                        授权码: <span class="license-code">${licenseCode}</span><br>
+                        错误: ${result.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 测试标记使用
+        function testMarkAsUsed() {
+            const licenseCode = document.getElementById('markUsedInput').value.trim();
+            const resultDiv = document.getElementById('markUsedResult');
+            
+            if (!licenseCode) {
+                resultDiv.innerHTML = '<div class="alert alert-error">请输入授权码</div>';
+                return;
+            }
+
+            const result = licenseManagerV2.markAsUsed(licenseCode);
+            
+            if (result.success) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>✅ 标记成功</strong><br>
+                        授权码: <span class="license-code">${result.licenseInfo.code}</span><br>
+                        使用时间: ${new Date(result.licenseInfo.usedAt).toLocaleString()}
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-error">
+                        <strong>❌ 标记失败</strong><br>
+                        授权码: <span class="license-code">${licenseCode}</span><br>
+                        错误: ${result.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 完整流程测试
+        function testFullFlow() {
+            const resultDiv = document.getElementById('fullFlowResult');
+            let result = '<div class="test-result"><h3>完整流程测试结果</h3>';
+            
+            try {
+                // 1. 生成授权码
+                const testCode = licenseManagerV2.generateLicenseCode(999);
+                result += `<p>1. 生成授权码: <span class="license-code">${testCode}</span> ✅</p>`;
+                
+                // 2. 验证授权码
+                const validationResult = licenseManagerV2.validateLicense(testCode);
+                if (validationResult.valid) {
+                    result += `<p>2. 验证授权码: ✅ 成功</p>`;
+                } else {
+                    result += `<p>2. 验证授权码: ❌ 失败 - ${validationResult.message}</p>`;
+                }
+                
+                // 3. 分发授权码
+                const distributionResult = licenseManagerV2.distributeLicense(testCode, { customer: '测试客户' });
+                if (distributionResult.success) {
+                    result += `<p>3. 分发授权码: ✅ 成功</p>`;
+                } else {
+                    result += `<p>3. 分发授权码: ❌ 失败 - ${distributionResult.message}</p>`;
+                }
+                
+                // 4. 再次验证（应该仍然有效）
+                const validationResult2 = licenseManagerV2.validateLicense(testCode);
+                if (validationResult2.valid) {
+                    result += `<p>4. 分发后验证: ✅ 成功</p>`;
+                } else {
+                    result += `<p>4. 分发后验证: ❌ 失败 - ${validationResult2.message}</p>`;
+                }
+                
+                // 5. 标记为已使用
+                const markResult = licenseManagerV2.markAsUsed(testCode);
+                if (markResult.success) {
+                    result += `<p>5. 标记为已使用: ✅ 成功</p>`;
+                } else {
+                    result += `<p>5. 标记为已使用: ❌ 失败 - ${markResult.message}</p>`;
+                }
+                
+                // 6. 最终验证（应该失败）
+                const validationResult3 = licenseManagerV2.validateLicense(testCode);
+                if (!validationResult3.valid) {
+                    result += `<p>6. 使用后验证: ✅ 正确失败</p>`;
+                } else {
+                    result += `<p>6. 使用后验证: ❌ 应该失败但成功了</p>`;
+                }
+                
+                result += '<p><strong>🎉 完整流程测试完成！</strong></p>';
+                
+            } catch (error) {
+                result += `<p>❌ 测试过程中出现错误: ${error.message}</p>`;
+            }
+            
+            result += '</div>';
+            resultDiv.innerHTML = result;
+        }
+
+        // 页面加载时显示系统状态
+        document.addEventListener('DOMContentLoaded', function() {
+            showSystemStatus();
+        });
+    </script>
+</body>
+</html> 

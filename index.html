@@ -848,8 +848,7 @@
         return false;
       }
 
-      // 重新加载分发记录，确保新分发的授权码能被识别
-      licenseManager.loadDistributedLicenses();
+      // 使用新的授权码管理系统验证
 
       // 使用授权码管理器验证
       const validationResult = licenseManagerV2.validateLicense(code.trim());
