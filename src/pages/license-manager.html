@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>授权码管理 - 配对题生成器</title>
     <script src="../js/license-manager.js"></script>
+    <script src="../js/license-distributor.js"></script>
     <style>
         body {
             font-family: "Segoe UI", "PingFang SC", "Hiragino Sans", Arial, sans-serif;
@@ -232,6 +233,38 @@
             <button class="btn btn-warning" onclick="generateTestLicense()">生成测试授权码</button>
         </div>
 
+        <!-- 授权码分发 -->
+        <div class="section">
+            <h2>📤 授权码分发</h2>
+            <div class="input-group">
+                <label for="distributeLicenseInput">授权码：</label>
+                <input type="text" id="distributeLicenseInput" placeholder="输入要分发的授权码" />
+            </div>
+            <div class="input-group">
+                <label for="distributeTypeSelect">类型：</label>
+                <select id="distributeTypeSelect">
+                    <option value="premium">高级版</option>
+                    <option value="standard">标准版</option>
+                    <option value="trial">试用版</option>
+                    <option value="free">免费版</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="customerInfoInput">客户信息：</label>
+                <input type="text" id="customerInfoInput" placeholder="客户姓名/联系方式（可选）" />
+            </div>
+            <button class="btn btn-success" onclick="distributeLicense()">分发授权码</button>
+            <button class="btn" onclick="refreshDistributionStats()">刷新统计</button>
+        </div>
+
+        <!-- 分发统计 -->
+        <div class="section">
+            <h2>📊 分发统计</h2>
+            <div id="distributionStats">
+                <!-- 分发统计将在这里显示 -->
+            </div>
+        </div>
+
         <!-- 授权码列表 -->
         <div class="section">
             <h2>📋 有效授权码列表</h2>
@@ -281,6 +314,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             refreshStats();
             refreshLicenseList();
+            refreshDistributionStats();
         });
 
         // 验证授权码
@@ -422,6 +456,63 @@
                 addLicense();
             }
         });
+
+        // 分发授权码
+        function distributeLicense() {
+            const licenseInput = document.getElementById('distributeLicenseInput');
+            const typeSelect = document.getElementById('distributeTypeSelect');
+            const customerInput = document.getElementById('customerInfoInput');
+            
+            const licenseCode = licenseInput.value.trim();
+            const licenseType = typeSelect.value;
+            const customerInfo = customerInput.value.trim();
+
+            if (!licenseCode) {
+                alert('请输入授权码');
+                return;
+            }
+
+            if (licenseDistributor.distributeLicense(licenseCode, licenseType, customerInfo)) {
+                alert('✅ 授权码分发成功！');
+                licenseInput.value = '';
+                customerInput.value = '';
+                refreshDistributionStats();
+                refreshLicenseList();
+            } else {
+                alert('❌ 授权码分发失败');
+            }
+        }
+
+        // 刷新分发统计
+        function refreshDistributionStats() {
+            const stats = licenseDistributor.getDistributionStats();
+            const statsDiv = document.getElementById('distributionStats');
+            
+            statsDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 1rem 0;">
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.total}</div>
+                        <div class="stat-label">总分发数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.active}</div>
+                        <div class="stat-label">活跃授权码</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.inactive}</div>
+                        <div class="stat-label">已停用</div>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <h4>按类型统计：</h4>
+                    <ul>
+                        ${Object.entries(stats.byType).map(([type, count]) => 
+                            `<li>${type}: ${count}个</li>`
+                        ).join('')}
+                    </ul>
+                </div>
+            `;
+        }
     </script>
 </body>
 

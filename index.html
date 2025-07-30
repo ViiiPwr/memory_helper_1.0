@@ -9,6 +9,8 @@
   <script src="src/js/local-storage.js"></script>
   <!-- 授权码管理器 -->
   <script src="src/js/license-manager.js"></script>
+  <!-- 授权码分发系统 -->
+  <script src="src/js/license-distributor.js"></script>
 
   <!-- 云托管环境下的云开发初始化 -->
   <script>
@@ -807,20 +809,20 @@
       document.querySelector('.section').style.display = 'none';
     }
 
-        // 显示主界面
+    // 显示主界面
     function showMainInterface() {
       document.getElementById('authOverlay').style.display = 'none';
       document.getElementById('userInfoBar').style.display = 'flex';
       document.querySelector('h1').style.display = 'block';
       document.querySelector('.section').style.display = 'block';
       document.getElementById('currentUserId').textContent = currentUser.userId;
-      
+
       // 清理之前的管理员按钮（如果存在）
       const existingLicenseBtn = document.getElementById('licenseBtn');
       if (existingLicenseBtn) {
         existingLicenseBtn.remove();
       }
-      
+
       // 如果是管理员，显示管理按钮
       if (currentUser.isAdmin) {
         const adminBtn = document.createElement('button');
@@ -831,7 +833,7 @@
         adminBtn.addEventListener('click', function () {
           window.open('src/pages/license-manager.html', '_blank');
         });
-        
+
         // 插入到帮助按钮后面
         const helpBtn = document.getElementById('helpBtn');
         helpBtn.parentNode.insertBefore(adminBtn, helpBtn.nextSibling);

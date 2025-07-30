@@ -34,6 +34,26 @@ class LicenseManager {
                 console.error('加载用户授权码失败:', error);
             }
         }
+
+        // 加载已分发的授权码（确保新生成的授权码对所有用户有效）
+        this.loadDistributedLicenses();
+    }
+
+    // 加载已分发的授权码
+    loadDistributedLicenses() {
+        try {
+            const distributed = localStorage.getItem('pairing_license_distribution');
+            if (distributed) {
+                const distributedLicenses = JSON.parse(distributed);
+                distributedLicenses.forEach(license => {
+                    if (license.status === 'active') {
+                        this.validLicenses.add(license.code);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('加载分发授权码失败:', error);
+        }
     }
 
     // 验证授权码
